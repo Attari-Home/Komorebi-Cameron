@@ -5,8 +5,41 @@ import { SITE } from '../../data/site';
 const year = new Date().getFullYear();
 ---
 
-<footer class="relative border-t border-line/10 pb-12 pt-16">
-  <Container as="div">
+<footer class="relative overflow-hidden pb-12">
+  <!-- Layered Mt. Fuji-style silhouette; every fill follows the active palette. -->
+  <div aria-hidden="true" class="pointer-events-none relative h-40 w-full sm:h-56 lg:h-64">
+    <svg
+      class="absolute inset-x-0 bottom-0 h-full w-full"
+      viewBox="0 0 1440 320"
+      preserveAspectRatio="xMidYMax slice"
+      focusable="false"
+    >
+      <circle class="mtn-sun" cx="1010" cy="118" r="46"></circle>
+      <!-- far range + Fuji -->
+      <path
+        class="mtn-far"
+        d="M0 320V236l120-26 110 18 140-40 120 12 90-58 60-40 30-22h60l30 22 60 40 90 58 120-12 130 30 150-28 140 22 140-18v160Z"
+      ></path>
+      <path class="mtn-snow" d="M660 92l30-22h60l30 22-24 14-22-12-20 14-22-14-22 12Z"></path>
+      <path
+        class="mtn-line"
+        stroke-width="1.2"
+        d="M0 236l120-26 110 18 140-40 120 12 90-58 60-40 30-22h60l30 22 60 40 90 58 120-12 130 30 150-28 140 22 140-18"
+      ></path>
+      <!-- mid ridge -->
+      <path
+        class="mtn-mid"
+        d="M0 290c120-34 210-58 330-40s200 46 330 22 230-62 360-44 300 44 420 18v114H0Z"
+      ></path>
+      <!-- near hills melt into the footer background -->
+      <path
+        class="mtn-near"
+        d="M0 306c160-26 280-34 420-14s260 30 420 6 380-38 600-6v28H0Z"
+      ></path>
+      <path class="mtn-base" d="M0 318c200-14 420-20 700-10s560 8 740-6v18H0Z"></path>
+    </svg>
+  </div>
+  <Container as="div" class="pt-10">
     <div class="flex flex-col gap-12 md:flex-row md:items-start md:justify-between">
       <div class="max-w-sm">
         <p class="text-lg font-semibold tracking-wide">
@@ -18,12 +51,12 @@ const year = new Date().getFullYear();
         </p>
       </div>
 
-      <nav aria-label="Footer" class="grid grid-cols-2 gap-x-14 gap-y-3 text-sm">
+      <nav aria-label="Footer" class="grid shrink-0 grid-cols-2 gap-x-14 gap-y-0 text-sm">
         {
           SITE.nav.map((item) => (
             <a
               href={item.href}
-              class="text-fg-muted transition-colors duration-300 hover:text-sakura-a"
+              class="inline-flex min-h-11 items-center text-fg-muted transition-colors duration-300 hover:text-sakura-a"
             >
               {item.label}
             </a>
@@ -31,13 +64,13 @@ const year = new Date().getFullYear();
         }
         <a
           href={`mailto:${SITE.contact.email}`}
-          class="text-fg-muted transition-colors duration-300 hover:text-sakura-a"
+          class="inline-flex min-h-11 items-center text-fg-muted transition-colors duration-300 hover:text-sakura-a"
         >
           Email us
         </a>
       </nav>
 
-      <a href="#top" class="btn-glass self-start">
+      <a href="#top" class="btn-glass shrink-0 self-start whitespace-nowrap">
         Back to top
         <svg
           width="16"

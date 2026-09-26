@@ -5,19 +5,22 @@ import { scrollBus } from '../../lib/scrollBus';
 import { getCurrentTheme, onThemeChange, type Theme } from '../../lib/theme';
 
 /** Number of trail history samples kept in the ring buffer. */
-const TRAIL_CAPACITY = 220;
+const TRAIL_CAPACITY = 260;
 /** Minimum travel (px) between trail samples. */
-const TRAIL_SPACING = 1.6;
+const TRAIL_SPACING = 2;
+/** Peak thread width in CSS px (kept ultra-thin on purpose). */
+const THREAD_WIDTH = 1.7;
 
 /**
- * The Guide Petal: a glowing pink petal that tumbles down the page beside the
- * content as the user scrolls, leaving a fading, glowing trail.
+ * The Guide Petal: a crisp glowing petal that weaves down the whole page beside
+ * the content as the user scrolls, trailing a hairline light thread.
  *
  * Path model
  * ----------
- *  - Vertical: the petal drifts from ~24% to ~74% of the viewport height as
+ *  - Vertical: the petal drifts from ~14% to ~86% of the viewport height as
  *    document scroll progress goes 0 -> 1.
- *  - Horizontal: a spiral, `x = laneCenter + sin(progress * 6π) * amplitude`.
+ *  - Horizontal: a sine wave, `x = laneCenter + sin(progress * 10π) * amplitude`,
+ *    spanning the entire document (scrollProgress 0 -> 1).
  *  - Text avoidance: the lane is chosen from the *measured* gutters outside
  *    the page's content column(s) (`[data-safe-column]`). The amplitude is
  *    derived from the gutter width and the petal's own size, and x is hard
@@ -103,7 +106,7 @@ export default function GuidePetal() {
       const gutter = useRight ? rightWidth : leftWidth;
 
       usable = gutter >= 9;
-      size = clamp(gutter * 0.62, 10, 34);
+      size = clamp(gutter * 0.7, 10, 32);
       laneCenter = useRight ? rightInner + gutter / 2 : gutter / 2;
       // Half the free width, minus the petal's own half-width and a hair of slack.
       amplitude = Math.max(0, gutter / 2 - size / 2 - 1);
@@ -146,7 +149,8 @@ export default function GuidePetal() {
 
       const bus = scrollBus.state;
       const p = clamp01(bus.progress);
-      const phase = p * Math.PI * 6;
+      // One continuous sine wave for the whole page: 0 -> 1 scroll = 5 full weaves.
+      const phase = p * Math.PI * 10;
 
       // ---- Target on the spiral, inside the lane ---------------------------
       const idleSway = Math.sin(time * 0.7) * amplitude * 0.12;
@@ -157,7 +161,7 @@ export default function GuidePetal() {
       );
       const bob = Math.sin(time * 0.9) * 5;
       const eased = p * p * (3 - 2 * p);
-      const targetY = vh * lerp(0.24, 0.74, eased) + Math.cos(phase) * Math.min(vh * 0.05, 34) + bob;
+      const targetY = vh * lerp(0.14, 0.86, eased) + Math.cos(phase) * Math.min(vh * 0.04, 28) + bob;
 
       if (!initialised) {
         s.x = targetX;
@@ -211,7 +215,7 @@ export default function GuidePetal() {
       }
 
       // Trail lifetime stretches with scroll speed.
-      const life = 1.25 + clamp(Math.abs(bus.velocity) / 2500, 0, 1) * 0.9;
+      const life = 1.5 + clamp(Math.abs(bus.velocity) / 2500, 0, 1) * 1.1;
       while (trailCount > 0) {
         const oldest = (trailHead - trailCount + TRAIL_CAPACITY) % TRAIL_CAPACITY;
         if (time - trailT[oldest]! > life) trailCount--;
@@ -225,9 +229,10 @@ export default function GuidePetal() {
     };
 
     /**
-     * Draw the decaying ribbon: smooth quadratic segments through the history,
-     * tapering and fading with age. Three passes: soft glow, bright core, and
-     * a dashed sparkle line (the dash pattern is what reads as "stroke-dasharray").
+     * Draw the light thread: a hairline (<= 1.7px) that tapers and decays with
+     * age, a faint wider glow beneath it, and a few sparkle motes shed along
+     * its length. Canvas rather than SVG so it costs one clear + a handful of
+     * strokes per frame with no DOM churn.
      */
     const drawTrail = (time: number, life: number) => {
       tctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -240,17 +245,9 @@ export default function GuidePetal() {
       tctx.globalCompositeOperation = theme === 'dark' ? 'lighter' : 'source-over';
 
       const at = (n: number) => (trailHead - trailCount + n + TRAIL_CAPACITY) % TRAIL_CAPACITY;
-      const baseWidth = size * 0.55;
 
-      const pass = (
-        color: string,
-        widthScale: number,
-        alphaScale: number,
-        dash: number[] | null,
-      ) => {
+      const pass = (color: string, width: number, alphaScale: number) => {
         tctx.strokeStyle = color;
-        tctx.setLineDash(dash ?? []);
-
         for (let n = 1; n < trailCount - 1; n++) {
           const i0 = at(n - 1);
           const i1 = at(n);
@@ -258,11 +255,11 @@ export default function GuidePetal() {
 
           const age = clamp01((time - trailT[i1]!) / life);
           const fade = 1 - age;
-          const alpha = fade * fade * alphaScale * s.opacity;
-          if (alpha < 0.004) continue;
+          const alpha = Math.pow(fade, 1.7) * alphaScale * s.opacity;
+          if (alpha < 0.005) continue;
 
           tctx.globalAlpha = alpha;
-          tctx.lineWidth = Math.max(0.5, baseWidth * fade * widthScale);
+          tctx.lineWidth = Math.max(0.4, width * (0.35 + 0.65 * fade));
 
           const mx0 = (trailX[i0]! + trailX[i1]!) / 2;
           const my0 = (trailY[i0]! + trailY[i1]!) / 2;
@@ -276,11 +273,24 @@ export default function GuidePetal() {
         }
       };
 
-      pass(colorA, 3.4, 0.2, null); // glow
-      pass(colorB, 0.6, 0.85, null); // core
-      pass(colorB, 0.28, 0.9, [1, 7]); // sparkle dots
+      pass(colorA, THREAD_WIDTH * 3, 0.16); // soft halo
+      pass(colorB, THREAD_WIDTH, 0.9); // hairline core
 
-      tctx.setLineDash([]);
+      // Sparkle motes: tiny dots on every 7th sample, fading with age.
+      tctx.fillStyle = colorB;
+      for (let n = 3; n < trailCount; n += 7) {
+        const i = at(n);
+        const fade = 1 - clamp01((time - trailT[i]!) / life);
+        const a = fade * fade * 0.85 * s.opacity;
+        if (a < 0.02) continue;
+        tctx.globalAlpha = a;
+        // Deterministic offset from the sample time, so motes shimmer in place.
+        const off = Math.sin(trailT[i]! * 37.7) * 3.2;
+        tctx.beginPath();
+        tctx.arc(trailX[i]! + off, trailY[i]! + Math.cos(trailT[i]! * 23.1) * 2.4, 0.7 + fade * 0.6, 0, Math.PI * 2);
+        tctx.fill();
+      }
+
       tctx.globalAlpha = 1;
       tctx.globalCompositeOperation = 'source-over';
     };
@@ -314,22 +324,22 @@ export default function GuidePetal() {
       <div
         ref={petalRef}
         className="absolute left-0 top-0 will-change-transform"
-        style={{ opacity: 0, width: 30, height: 36 }}
+        style={{ opacity: 0, width: 32, height: 38 }}
       >
         {/* Radial glow halo */}
         <span
-          className="absolute -inset-[110%] animate-petal-glow rounded-full"
+          className="absolute -inset-[55%] animate-petal-glow rounded-full"
           style={{
             background:
-              'radial-gradient(circle, color-mix(in srgb, var(--gp-a) 65%, transparent) 0%, transparent 62%)',
-            filter: 'blur(6px)',
+              'radial-gradient(circle, color-mix(in srgb, var(--gp-a) 45%, transparent) 0%, transparent 60%)',
+            filter: 'blur(4px)',
           }}
         />
 
         <svg
           viewBox="0 0 40 48"
           className="relative block h-full w-full overflow-visible"
-          style={{ filter: 'drop-shadow(0 0 7px var(--gp-a)) drop-shadow(0 0 16px var(--gp-a))' }}
+          style={{ filter: 'drop-shadow(0 0 3px var(--gp-a))' }}
           focusable="false"
         >
           <defs>

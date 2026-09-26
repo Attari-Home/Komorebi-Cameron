@@ -117,6 +117,12 @@ const jsonLd = {
         var root = document.documentElement;
         root.classList.add('js');
         root.setAttribute('data-theme', theme);
+        try {
+          var pal = window.localStorage.getItem('kc-petal-palette');
+          if (pal === 'sakura' || pal === 'golden' || pal === 'velvet' || pal === 'ghost') {
+            root.setAttribute('data-petal-palette', pal);
+          }
+        } catch (e) {}
         root.style.colorScheme = theme;
         var meta = document.querySelector('meta[name="theme-color"]');
         if (meta) meta.setAttribute('content', theme === 'light' ? '#FAF7F8' : '#0A0A0C');
@@ -188,6 +194,11 @@ const jsonLd = {
       whole page; branches fade out after the hero). 100lvh so mobile URL-bar
       changes never resize it.
     -->
+    <div
+      aria-hidden="true"
+      class="ambient-bg pointer-events-none fixed inset-0 -z-20"
+    ></div>
+
     <div
       id="canvas-root"
       aria-hidden="true"

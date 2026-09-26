@@ -91,6 +91,10 @@ export class Engine {
   private layerTime = -1;
   private layerMsEma = 0;
 
+  // Ambient glow leaves: a few large, very faint, slowly drifting soft leaves.
+  private ambientCount = 0;
+  private ambientSeed: Float32Array = new Float32Array(0);
+
   private scrollSource: ScrollSource | null = null;
   private smoothedVelocity = 0;
 
@@ -114,6 +118,15 @@ export class Engine {
     this.sprites = new PetalSpriteSet(this.config.petals);
     this.pool = new PetalPool(this.config.petals, this.config.seed);
     this.branches = new BranchSystem(this.config.branches, this.config.seed);
+
+    // Fewer ambient leaves on lean (mobile) configs.
+    this.ambientCount = this.config.petals.maxCount <= 40 ? 3 : 6;
+    this.ambientSeed = new Float32Array(this.ambientCount * 4);
+    for (let i = 0; i < this.ambientSeed.length; i++) {
+      // Deterministic pseudo-random in [0,1): stable across reloads.
+      const v = Math.sin((i + 1) * 12.9898 + this.config.seed * 0.001) * 43758.5453;
+      this.ambientSeed[i] = v - Math.floor(v);
+    }
 
     this.layer = createSurface(1, 1);
     this.layerCtx = getContext2D(this.layer);
@@ -407,6 +420,49 @@ export class Engine {
     this.layerMsEma = this.layerMsEma === 0 ? cost : this.layerMsEma * 0.9 + cost * 0.1;
   }
 
+  /** Soft, elongated glow "leaves" drifting behind everything. Cheap: N gradient fills. */
+  private drawAmbient(ctx: CanvasRenderingContext2D, dpr: number, scrollY: number): void {
+    const n = this.ambientCount;
+    if (n === 0) return;
+    const color = this.palette.petalA;
+    const t = this.reducedMotion ? 0 : this.time;
+    const W = this.width;
+    const H = this.height;
+    const light = this.theme === 'light';
+
+    ctx.save();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalCompositeOperation = light ? 'source-over' : 'lighter';
+    for (let i = 0; i < n; i++) {
+      const s0 = this.ambientSeed[i * 4]!;
+      const s1 = this.ambientSeed[i * 4 + 1]!;
+      const s2 = this.ambientSeed[i * 4 + 2]!;
+      const s3 = this.ambientSeed[i * 4 + 3]!;
+
+      const r = (Math.min(W, H) * (0.16 + s2 * 0.16)) | 0;
+      const x = W * (0.08 + s0 * 0.84) + Math.sin(t * (0.05 + s1 * 0.05) + s3 * 6.28) * W * 0.05;
+      // Slow vertical wrap, gently coupled to scroll for parallax depth.
+      const yRaw = H * s1 + t * (4 + s2 * 6) - scrollY * (0.03 + s3 * 0.05);
+      const y = ((yRaw % (H + r * 2)) + (H + r * 2)) % (H + r * 2) - r;
+      const rot = -0.7 + s3 * 1.4 + Math.sin(t * 0.08 + s0 * 6) * 0.25;
+      const alpha = (light ? 0.1 : 0.12) * (0.55 + s2 * 0.45);
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      ctx.scale(1, 0.5);
+      const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+      grad.addColorStop(0, withAlpha(color, alpha));
+      grad.addColorStop(1, withAlpha(color, 0));
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
   private draw(): void {
     if (this.destroyed || this.width === 0) return;
 
@@ -440,6 +496,9 @@ export class Engine {
       ctx.globalAlpha = 1;
     }
 
+    // 1b. Ambient glow leaves, beneath the petals.
+    this.drawAmbient(ctx, dpr, scrollY);
+
     // 2. Petals, fading in as the branches near completion.
     const intro = this.reducedMotion ? 1 : easeOutCubic(clamp01((progress - 0.3) / 0.6));
     this.pool.draw(ctx, this.sprites, dpr, intro * cfg.petalOpacity);
@@ -447,4 +506,12 @@ export class Engine {
     ctx.globalAlpha = 1;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
+}
+
+/** `#rrggbb` -> `rgba(r,g,b,a)`. Falls back to the input for other formats. */
+function withAlpha(hex: string, alpha: number): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return hex;
+  const v = parseInt(m[1]!, 16);
+  return `rgba(${(v >> 16) & 255}, ${(v >> 8) & 255}, ${v & 255}, ${alpha.toFixed(3)})`;
 }

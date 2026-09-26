@@ -22,7 +22,13 @@ export default function CanvasStage() {
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const theme = getCurrentTheme();
 
+    // Lean config on phones / coarse pointers: 30-40 petals, no governor floor issues.
+    const lean =
+      window.matchMedia('(max-width: 767px)').matches ||
+      window.matchMedia('(pointer: coarse)').matches;
+
     const engine = new Engine(canvas, {
+      ...(lean ? { petals: { minCount: 30, maxCount: 40, areaPerPetal: 9000 } } : {}),
       theme,
       petalColors: resolvePetalColors(getCurrentPaletteId(), theme),
       reducedMotion: motionQuery.matches,

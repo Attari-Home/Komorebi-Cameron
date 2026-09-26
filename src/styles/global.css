@@ -41,6 +41,11 @@
     --selection-bg: 255 112 166;
     --selection-fg: 10 10 12;
     --hover-tint: 255 183 197; /* text colour the proximity effect warms toward */
+    /* Palette-driven accent tokens (re-pointed by [data-petal-palette] below). */
+    --sakura-rgb: var(--sakura-a);
+    --accent-glow: var(--sakura-a);
+    --text-accent: var(--sakura-a);
+    --border-accent: var(--sakura-a);
   }
 
   :root[data-theme='light'] {
@@ -55,13 +60,62 @@
     --line: 26 20 24;
     --line-alpha: 0.09;
     /* Darkened sakura pair keeps AA contrast on the blossom background. */
-    --sakura-a: 226 58 121;
+    --sakura-a: 204 30 98; /* #CC1E62, 5.0:1 on #FAF7F8 */
     --sakura-b: 245 143 168;
     --glass-shadow: 0 8px 32px -12px rgb(120 60 85 / 0.22),
       inset 0 1px 0 0 rgb(255 255 255 / 0.9);
     --selection-bg: 255 112 166;
     --selection-fg: 26 20 24;
-    --hover-tint: 226 58 121;
+    --hover-tint: 204 30 98;
+    --sakura-rgb: var(--sakura-a);
+    --accent-glow: var(--sakura-a);
+    --text-accent: var(--sakura-a);
+    --border-accent: var(--sakura-a);
+  }
+
+  /* ------------------------------------------------------------------
+     Petal palettes -> UI accent tokens.
+     <html data-petal-palette> is set before paint (Layout inline script) and
+     on every selection (src/lib/petalPalette.ts), so highlights, borders and
+     glows recolour together with the canvas petals. Light-mode values are
+     darkened to keep >= 4.5:1 contrast for accent text on #FAF7F8.
+     ------------------------------------------------------------------ */
+  :root[data-theme='dark'][data-petal-palette='golden'] {
+    --sakura-a: 255 215 0;
+    --sakura-b: 255 233 138;
+    --hover-tint: 255 233 138;
+    --selection-bg: 255 215 0;
+  }
+  :root[data-theme='light'][data-petal-palette='golden'] {
+    --sakura-a: 138 98 0;
+    --sakura-b: 209 154 0;
+    --hover-tint: 138 98 0;
+    --selection-bg: 242 203 92;
+  }
+  :root[data-theme='dark'][data-petal-palette='velvet'] {
+    --sakura-a: 233 30 110;
+    --sakura-b: 240 98 146;
+    --hover-tint: 244 143 177;
+    --selection-bg: 233 30 110;
+    --selection-fg: 249 249 251;
+  }
+  :root[data-theme='light'][data-petal-palette='velvet'] {
+    --sakura-a: 176 18 78;
+    --sakura-b: 224 87 138;
+    --hover-tint: 176 18 78;
+    --selection-bg: 224 87 138;
+  }
+  :root[data-theme='dark'][data-petal-palette='ghost'] {
+    --sakura-a: 250 250 250;
+    --sakura-b: 221 226 240;
+    --hover-tint: 255 255 255;
+    --selection-bg: 250 250 250;
+  }
+  :root[data-theme='light'][data-petal-palette='ghost'] {
+    --sakura-a: 92 86 112;
+    --sakura-b: 143 136 158;
+    --hover-tint: 92 86 112;
+    --selection-bg: 200 196 214;
   }
 
   html {
@@ -359,19 +413,20 @@
     --prox: 0;
     --i-base: rgb(var(--fg));
     color: var(--i-base);
-    transform: translate3d(0, calc(var(--prox) * -2px), 0);
-    text-shadow:
-      0 0 calc(var(--prox) * 22px) rgb(var(--sakura-a) / calc(var(--prox) * 0.62)),
-      0 0 calc(var(--prox) * 6px) rgb(var(--sakura-b) / calc(var(--prox) * 0.4));
+    transform: translate3d(0, calc(var(--prox) * -1.5px), 0);
+    /* Subtle halo: 0 2px 12px at 35% accent glow when fully "hot". */
+    text-shadow: 0 calc(var(--prox) * 2px) calc(var(--prox) * 12px)
+      rgb(var(--accent-glow) / calc(var(--prox) * 0.35));
   }
   .i-text-muted {
     --i-base: rgb(var(--fg-muted));
   }
   @supports (color: color-mix(in srgb, red 50%, blue)) {
     .i-text {
+      /* Never fully replaces the base colour, so body copy stays legible. */
       color: color-mix(
         in srgb,
-        var(--i-base) calc((1 - var(--prox)) * 100%),
+        var(--i-base) calc(100% - var(--prox) * 60%),
         rgb(var(--hover-tint))
       );
     }
@@ -564,5 +619,47 @@
   .js [data-reveal] {
     opacity: 1;
     transform: none;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   Ambient atmosphere + footer mountains (palette-aware via --sakura-*)
+   -------------------------------------------------------------------------- */
+@layer components {
+  .ambient-bg {
+    background:
+      radial-gradient(60vmax 45vmax at 12% 8%, rgb(var(--accent-glow) / 0.07), transparent 65%),
+      radial-gradient(55vmax 40vmax at 92% 46%, rgb(var(--sakura-b) / 0.05), transparent 70%),
+      radial-gradient(70vmax 40vmax at 30% 100%, rgb(var(--accent-glow) / 0.06), transparent 70%);
+  }
+  :root[data-theme='light'] .ambient-bg {
+    background:
+      radial-gradient(60vmax 45vmax at 12% 8%, rgb(var(--accent-glow) / 0.08), transparent 65%),
+      radial-gradient(55vmax 40vmax at 92% 46%, rgb(var(--sakura-b) / 0.09), transparent 70%),
+      radial-gradient(70vmax 40vmax at 30% 100%, rgb(var(--accent-glow) / 0.07), transparent 70%);
+  }
+  .mtn-far {
+    fill: rgb(var(--sakura-a) / 0.1);
+  }
+  .mtn-snow {
+    fill: rgb(var(--sakura-b) / 0.28);
+  }
+  .mtn-mid {
+    fill: rgb(var(--sakura-a) / 0.16);
+  }
+  .mtn-near {
+    fill: rgb(var(--sakura-a) / 0.1);
+  }
+  .mtn-base {
+    fill: rgb(var(--bg));
+  }
+  .mtn-sun {
+    fill: rgb(var(--sakura-a) / 0.22);
+    filter: drop-shadow(0 0 28px rgb(var(--accent-glow) / 0.55));
+  }
+  .mtn-line {
+    stroke: rgb(var(--border-accent) / 0.35);
+    fill: none;
   }
 }

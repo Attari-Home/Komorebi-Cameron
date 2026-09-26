@@ -6,15 +6,15 @@ import { SITE } from '../../data/site';
 
 <section id="contact" aria-labelledby="contact-heading" class="relative scroll-mt-24 py-28 lg:py-44">
   <Container>
-    <div class="grid gap-14 lg:grid-cols-12 lg:gap-20">
-      <div class="lg:col-span-5" data-reveal>
+    <div class="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-start lg:gap-x-16 xl:gap-x-24">
+      <div class="min-w-0" data-reveal>
         <p class="mb-8 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted">
           <span aria-hidden="true" class="h-px w-10 bg-sakura-gradient"></span>
           Contact
         </p>
-        <h2 id="contact-heading" class="i-text text-balance font-sans text-display-lg font-semibold">
+        <h2 id="contact-heading" class="i-text font-sans text-[clamp(2.25rem,1.35rem+3.4vw,4.25rem)] font-semibold leading-[1.08] tracking-tight [overflow-wrap:normal] [hyphens:none]">
           Let's build something
-          <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] -mr-[0.02em] pr-[0.02em] text-[1.12em] leading-[0.9]">unforgettable</em>.
+          <em class="accent-serif text-sakura-gradient mt-1 inline-block whitespace-nowrap pb-[0.12em] pr-[0.02em] text-[1.1em] leading-[1]">unforgettable</em>.
         </h2>
         <p class="i-text i-text-muted mt-8 max-w-md text-pretty text-lg leading-relaxed">
           Tell us what you are dreaming up. We take on a small number of
@@ -27,7 +27,7 @@ import { SITE } from '../../data/site';
             <dd class="mt-2">
               <a
                 href={`mailto:${SITE.contact.email}`}
-                class="i-text text-xl font-semibold text-fg underline-offset-4 transition-colors hover:text-sakura-a hover:underline"
+                class="i-text inline-flex min-h-11 items-center text-xl font-semibold text-fg underline-offset-4 transition-colors hover:text-sakura-a hover:underline"
               >
                 {SITE.contact.email}
               </a>
@@ -40,7 +40,7 @@ import { SITE } from '../../data/site';
         </dl>
       </div>
 
-      <div class="lg:col-span-7" data-reveal style="--reveal-delay: 140ms">
+      <div class="min-w-0" data-reveal style="--reveal-delay: 140ms">
         <ContactForm client:only="react">
           <div
             slot="fallback"

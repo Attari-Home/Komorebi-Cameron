@@ -27,8 +27,8 @@ export default {
         cream: '#F9F9FB',
         blossom: '#FAF7F8',
         sakura: {
-          DEFAULT: '#FF70A6',
-          light: '#FFB7C5',
+          DEFAULT: 'rgb(var(--sakura-a) / <alpha-value>)',
+          light: 'rgb(var(--sakura-b) / <alpha-value>)',
         },
       },
 
@@ -56,7 +56,7 @@ export default {
       },
 
       backgroundImage: {
-        'sakura-gradient': 'linear-gradient(120deg, #FF70A6 0%, #FFB7C5 100%)',
+        'sakura-gradient': 'linear-gradient(120deg, rgb(var(--sakura-a)) 0%, rgb(var(--sakura-b)) 100%)',
         'sakura-gradient-soft':
           'linear-gradient(120deg, rgb(var(--sakura-a) / 0.16) 0%, rgb(var(--sakura-b) / 0.06) 100%)',
         'radial-glow':

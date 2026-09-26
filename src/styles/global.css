@@ -639,27 +639,18 @@
       radial-gradient(55vmax 40vmax at 92% 46%, rgb(var(--sakura-b) / 0.09), transparent 70%),
       radial-gradient(70vmax 40vmax at 30% 100%, rgb(var(--accent-glow) / 0.07), transparent 70%);
   }
-  .mtn-far {
-    fill: rgb(var(--sakura-a) / 0.1);
-  }
-  .mtn-snow {
-    fill: rgb(var(--sakura-b) / 0.28);
-  }
-  .mtn-mid {
-    fill: rgb(var(--sakura-a) / 0.16);
-  }
-  .mtn-near {
-    fill: rgb(var(--sakura-a) / 0.1);
-  }
-  .mtn-base {
-    fill: rgb(var(--bg));
-  }
-  .mtn-sun {
-    fill: rgb(var(--sakura-a) / 0.22);
-    filter: drop-shadow(0 0 28px rgb(var(--accent-glow) / 0.55));
-  }
-  .mtn-line {
-    stroke: rgb(var(--border-accent) / 0.35);
-    fill: none;
-  }
+
+    .s-a{stop-color:rgb(var(--sakura-a))}.s-b{stop-color:rgb(var(--sakura-b))}.s-fg{stop-color:rgb(var(--fg))}.s-bg{stop-color:rgb(var(--bg))}.s-mist{stop-color:rgb(var(--sakura-b))}
+  .ls-disc{fill:rgb(var(--text-accent) / 0.85)}
+  .ls-ridge{fill:none;stroke:rgb(var(--border-accent) / 0.4);stroke-linecap:round}
+  .ls-fore{fill:rgb(var(--bg))}
+  .ls-fog{mix-blend-mode:normal}
+  .bird-silhouette{fill:rgb(var(--fg) / 0.55)}
+
+  .ls-birds { animation: bird-drift 42s linear infinite alternate; }
+}
+
+@keyframes bird-drift {
+  from { transform: translate3d(-70px, 6px, 0); }
+  to { transform: translate3d(90px, -8px, 0); }
 }

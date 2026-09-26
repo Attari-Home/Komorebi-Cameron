@@ -19,14 +19,11 @@ const THREAD_WIDTH = 1.7;
  * ----------
  *  - Vertical: the petal drifts from ~14% to ~86% of the viewport height as
  *    document scroll progress goes 0 -> 1.
- *  - Horizontal: a sine wave, `x = laneCenter + sin(progress * 10π) * amplitude`,
- *    spanning the entire document (scrollProgress 0 -> 1).
- *  - Text avoidance: the lane is chosen from the *measured* gutters outside
- *    the page's content column(s) (`[data-safe-column]`). The amplitude is
- *    derived from the gutter width and the petal's own size, and x is hard
- *    clamped after the spring step, so the petal can never enter the column
- *    that holds body text or card copy. On narrow screens the petal shrinks
- *    to fit the gutter rather than overlapping.
+ *  - Horizontal: a sine wave across the WHOLE viewport width,
+ *    `x = vw/2 + sin(progress * 8π) * vw * 0.4`, over scroll progress 0 -> 1.
+ *  - Physics: a soft spring (lag + overshoot), drag, wind gusts proportional to
+ *    scroll velocity, and angular inertia so the petal tumbles organically.
+ *    It is clamped inside the viewport at all times.
  *
  * Everything runs in one rAF loop reading `scrollBus.state` and writing
  * straight to DOM styles / a canvas: no React state, no re-renders.
@@ -82,34 +79,11 @@ export default function GuidePetal() {
       vw = document.documentElement.clientWidth;
       vh = window.innerHeight;
 
-      let left = Infinity;
-      let right = -Infinity;
-      document.querySelectorAll<HTMLElement>('[data-safe-column]').forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        const cs = getComputedStyle(el);
-        left = Math.min(left, rect.left + (parseFloat(cs.paddingLeft) || 0));
-        right = Math.max(right, rect.right - (parseFloat(cs.paddingRight) || 0));
-      });
-      if (!Number.isFinite(left) || !Number.isFinite(right)) {
-        left = vw * 0.1;
-        right = vw * 0.9;
-      }
-
-      // Keep a small buffer between the petal lane and the text column.
-      const buffer = 6;
-      const leftInner = left - buffer; // left gutter spans [0, leftInner]
-      const rightInner = right + buffer; // right gutter spans [rightInner, vw]
-      const leftWidth = Math.max(0, leftInner);
-      const rightWidth = Math.max(0, vw - rightInner);
-
-      const useRight = rightWidth >= leftWidth;
-      const gutter = useRight ? rightWidth : leftWidth;
-
-      usable = gutter >= 9;
-      size = clamp(gutter * 0.7, 10, 32);
-      laneCenter = useRight ? rightInner + gutter / 2 : gutter / 2;
-      // Half the free width, minus the petal's own half-width and a hair of slack.
-      amplitude = Math.max(0, gutter / 2 - size / 2 - 1);
+      // Full-viewport sweep: no gutters, the petal owns the whole screen width.
+      usable = true;
+      size = clamp(vw * 0.115, 34, 46);
+      laneCenter = vw / 2;
+      amplitude = Math.max(0, vw * 0.4);
 
       petal.style.width = `${size}px`;
       petal.style.height = `${size * 1.2}px`;
@@ -126,7 +100,7 @@ export default function GuidePetal() {
     window.addEventListener('resize', measure);
 
     // ---- Simulation state ------------------------------------------------
-    const s = { x: 0, y: 0, vx: 0, vy: 0, rot: 0, opacity: 0 };
+    const s = { x: 0, y: 0, vx: 0, vy: 0, rot: 0, av: 0, opacity: 0 };
     let initialised = false;
 
     const trailX = new Float32Array(TRAIL_CAPACITY);
@@ -150,10 +124,10 @@ export default function GuidePetal() {
       const bus = scrollBus.state;
       const p = clamp01(bus.progress);
       // One continuous sine wave for the whole page: 0 -> 1 scroll = 5 full weaves.
-      const phase = p * Math.PI * 10;
+      const phase = p * Math.PI * 8;
 
       // ---- Target on the spiral, inside the lane ---------------------------
-      const idleSway = Math.sin(time * 0.7) * amplitude * 0.12;
+      const idleSway = Math.sin(time * 0.7) * amplitude * 0.03;
       const targetX = clamp(
         laneCenter + Math.sin(phase) * amplitude + idleSway,
         laneCenter - amplitude,
@@ -169,25 +143,27 @@ export default function GuidePetal() {
         initialised = true;
       }
 
-      // ---- Critically-damped-ish spring toward the target ------------------
-      const k = 46;
-      const c = 2 * Math.sqrt(k) * 0.88;
-      s.vx += (k * (targetX - s.x) - c * s.vx) * dt;
-      s.vy += (k * (targetY - s.y) - c * s.vy) * dt;
+      // ---- Inertial spring: the petal lags the scroll, then glides after it ---
+      // Soft spring (low k) + drag (low damping ratio) gives a floaty overshoot;
+      // fast scrolling adds a wind gust that pushes it sideways.
+      const k = 11;
+      const c = 2 * Math.sqrt(k) * 0.62;
+      const gust = clamp(bus.velocity * 0.05, -140, 140) * Math.sin(time * 1.3 + phase);
+      s.vx += (k * (targetX - s.x) - c * s.vx + gust) * dt;
+      s.vy += (k * (targetY - s.y) - c * s.vy - clamp(bus.velocity, -3000, 3000) * 0.02) * dt;
       s.x += s.vx * dt;
       s.y += s.vy * dt;
-      // Hard guarantee: never leave the lane, whatever the spring does.
-      s.x = clamp(s.x, laneCenter - amplitude, laneCenter + amplitude);
+      s.x = clamp(s.x, size * 0.5, vw - size * 0.5);
+      s.y = clamp(s.y, size * 0.5, vh - size * 0.5);
 
-      // ---- Orientation: swirl + lean into scroll velocity ------------------
-      const rotTarget =
-        Math.cos(phase) * 0.9 +
-        clamp(s.vx * 0.0025, -0.5, 0.5) +
-        clamp(bus.velocity * 0.0003, -0.5, 0.5);
-      s.rot = damp(s.rot, rotTarget, 5, dt);
+      // ---- Orientation: angular inertia driven by velocity (rot += vel * 0.05) ---
+      const torque =
+        (Math.cos(phase) * 0.9 + s.vx * 0.05 * 0.06 + clamp(bus.velocity * 0.0004, -0.8, 0.8)) - s.rot;
+      s.av += (torque * 9 - s.av * 3.2) * dt;
+      s.rot += s.av * dt;
 
       // Pseudo-3D tumble: squash local x by |cos|.
-      const tumble = time * 0.7 + phase;
+      const tumble = time * 0.7 + phase + s.av * 0.6;
       const squash = 0.38 + 0.62 * Math.abs(Math.cos(tumble));
 
       // ---- Visibility: intro fade-in, fade out near the footer -------------
@@ -324,7 +300,7 @@ export default function GuidePetal() {
       <div
         ref={petalRef}
         className="absolute left-0 top-0 will-change-transform"
-        style={{ opacity: 0, width: 32, height: 38 }}
+        style={{ opacity: 0, width: 44, height: 53 }}
       >
         {/* Radial glow halo */}
         <span

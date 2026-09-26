@@ -1,0 +1,104 @@
+---
+import Container from './Container.astro';
+import { SITE } from '../../data/site';
+
+const icons: Record<string, string> = {
+  web: 'M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12',
+  canvas:
+    'M12 3c4.5 0 8 3 8 7 0 2.4-1.7 3.5-3.5 3.5H15a1.8 1.8 0 0 0-1.2 3.1c.6.6.4 1.9-1 1.9C7.5 18.5 4 15 4 11c0-4.4 3.6-8 8-8zM8.5 10.5h.01M12 7.5h.01M15.5 10h.01',
+  performance: 'M13 2 4 14h7l-1 8 9-12h-7l1-8z',
+};
+---
+
+<section id="services" aria-labelledby="services-heading" class="relative scroll-mt-24 py-28 lg:py-44">
+  <Container>
+    <div class="max-w-3xl" data-reveal>
+      <p class="mb-8 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted">
+        <span aria-hidden="true" class="h-px w-10 bg-sakura-gradient"></span>
+        What we do
+      </p>
+      <h2 id="services-heading" class="i-text text-balance font-sans text-display-lg font-semibold">
+        Three disciplines, one
+        <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] pr-[0.08em] text-[1.12em] leading-[0.9]">obsessive</em>
+        standard.
+      </h2>
+      <p class="i-text i-text-muted mt-8 max-w-2xl text-pretty text-lg leading-relaxed sm:text-xl">
+        From a single flagship page to an entire product platform, every
+        engagement draws on the same three strengths.
+      </p>
+    </div>
+
+    <ul class="mt-16 grid gap-6 lg:mt-24 lg:grid-cols-3">
+      {
+        SITE.services.map((service, i) => (
+          <li data-reveal style={`--reveal-delay: ${i * 130}ms`} class="flex">
+            <article class="glass-card group flex w-full flex-col p-8 sm:p-10">
+              <div class="flex items-start justify-between">
+                <span class="grid h-14 w-14 place-items-center rounded-2xl border border-sakura-a/30 bg-sakura-a/10 text-sakura-a transition-transform duration-500 ease-out-expo group-hover:scale-110 group-hover:rotate-3">
+                  <svg
+                    width="26"
+                    height="26"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d={icons[service.id]} />
+                  </svg>
+                </span>
+                <span class="text-sm font-medium tracking-[0.2em] text-fg-muted">{service.index}</span>
+              </div>
+
+              <p class="mt-10 text-xs font-medium uppercase tracking-[0.24em] text-sakura-a">
+                {service.kicker}
+              </p>
+              <h3 class="i-text mt-3 text-balance font-sans text-2xl font-semibold leading-tight sm:text-[1.7rem]">
+                {service.name}
+              </h3>
+              <p class="i-text i-text-muted mt-5 leading-relaxed">{service.description}</p>
+
+              <ul class="mt-8 space-y-3 border-t border-line/10 pt-8">
+                {
+                  service.features.map((feature) => (
+                    <li class="i-text i-text-muted flex gap-3 text-sm leading-relaxed">
+                      <span
+                        aria-hidden="true"
+                        class="mt-[0.55rem] h-1.5 w-1.5 shrink-0 rounded-full bg-sakura-a shadow-glow-sm"
+                      />
+                      {feature}
+                    </li>
+                  ))
+                }
+              </ul>
+
+              <a
+                href="#contact"
+                class="mt-10 inline-flex min-h-11 items-center gap-2 self-start text-sm font-semibold text-fg transition-colors duration-300 hover:text-sakura-a"
+              >
+                Discuss this service
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="transition-transform duration-500 ease-out-expo group-hover:translate-x-1.5"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </a>
+            </article>
+          </li>
+        ))
+      }
+    </ul>
+  </Container>
+</section>

@@ -1,0 +1,64 @@
+---
+import ThemeToggle from '../react/ThemeToggle';
+import PaletteSelector from '../react/PaletteSelector';
+import Container from './Container.astro';
+import { SITE } from '../../data/site';
+---
+
+<header class="pointer-events-none fixed inset-x-0 top-0 z-50">
+  <Container class="flex items-center justify-between py-5">
+    <a
+      href="#top"
+      class="btn-glass group pointer-events-auto !gap-2.5 !py-2.5 !pl-3.5 !pr-5"
+      aria-label={`${SITE.name} — back to top`}
+    >
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 64 64"
+        aria-hidden="true"
+        focusable="false"
+        class="transition-transform duration-700 ease-out-expo group-hover:rotate-[28deg]"
+      >
+        <defs>
+          <linearGradient id="hdr-petal" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" style="stop-color: rgb(var(--sakura-a))"></stop>
+            <stop offset="1" style="stop-color: rgb(var(--sakura-b))"></stop>
+          </linearGradient>
+        </defs>
+        <path
+          d="M32 6c10 9 15 19 11 30-2 7-7 11-11 19-4-8-9-12-11-19-4-11 1-21 11-30z"
+          fill="url(#hdr-petal)"></path>
+      </svg>
+      <span class="text-sm font-semibold tracking-wide">
+        Komorebi <span class="accent-serif text-base">Cameron</span>
+      </span>
+    </a>
+
+    <nav aria-label="Primary" class="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
+      <ul class="mr-2 hidden items-center gap-1 lg:flex">
+        {
+          SITE.nav.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                class="inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-medium text-fg-muted transition-colors duration-300 hover:text-fg"
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <PaletteSelector client:only="react">
+        <span slot="fallback" class="btn-glass btn-glass-icon" aria-hidden="true"></span>
+      </PaletteSelector>
+
+      <ThemeToggle client:only="react">
+        <!-- Reserves the exact footprint of the toggle to avoid layout shift. -->
+        <span slot="fallback" class="btn-glass btn-glass-icon" aria-hidden="true"></span>
+      </ThemeToggle>
+    </nav>
+  </Container>
+</header>

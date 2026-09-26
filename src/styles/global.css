@@ -1,0 +1,656 @@
+/* ==========================================================================
+   Komorebi Cameron — Global Styles
+   Layer order: tailwind base -> tokens/base -> components -> utilities
+   ========================================================================== */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --------------------------------------------------------------------------
+   Registered custom property so the neon border sweep can be animated.
+   -------------------------------------------------------------------------- */
+@property --sweep-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* --------------------------------------------------------------------------
+   Design tokens
+   Values are space-separated RGB channels so Tailwind alpha modifiers work:
+   rgb(var(--bg) / 0.8)
+   -------------------------------------------------------------------------- */
+@layer base {
+  :root,
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --bg: 10 10 12; /* #0A0A0C Deep Obsidian */
+    --fg: 249 249 251; /* #F9F9FB Cream */
+    --fg-muted: 178 176 186;
+    --surface: 255 255 255; /* used with low alpha for glass fills */
+    --surface-alpha: 0.04;
+    --surface-alpha-hover: 0.07;
+    --line: 255 255 255;
+    --line-alpha: 0.09;
+    --sakura-a: 255 112 166; /* #FF70A6 */
+    --sakura-b: 255 183 197; /* #FFB7C5 */
+    --glass-shadow: 0 8px 32px -8px rgb(0 0 0 / 0.45),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+    --selection-bg: 255 112 166;
+    --selection-fg: 10 10 12;
+    --hover-tint: 255 183 197; /* text colour the proximity effect warms toward */
+    /* Palette-driven accent tokens (re-pointed by [data-petal-palette] below). */
+    --sakura-rgb: var(--sakura-a);
+    --accent-glow: var(--sakura-a);
+    --text-accent: var(--sakura-a);
+    --border-accent: var(--sakura-a);
+  }
+
+  :root[data-theme='light'] {
+    color-scheme: light;
+
+    --bg: 250 247 248; /* #FAF7F8 Cherry Blossom */
+    --fg: 26 20 24;
+    --fg-muted: 104 92 99;
+    --surface: 255 255 255;
+    --surface-alpha: 0.62;
+    --surface-alpha-hover: 0.85;
+    --line: 26 20 24;
+    --line-alpha: 0.09;
+    /* Darkened sakura pair keeps AA contrast on the blossom background. */
+    --sakura-a: 204 30 98; /* #CC1E62, 5.0:1 on #FAF7F8 */
+    --sakura-b: 245 143 168;
+    --glass-shadow: 0 8px 32px -12px rgb(120 60 85 / 0.22),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.9);
+    --selection-bg: 255 112 166;
+    --selection-fg: 26 20 24;
+    --hover-tint: 204 30 98;
+    --sakura-rgb: var(--sakura-a);
+    --accent-glow: var(--sakura-a);
+    --text-accent: var(--sakura-a);
+    --border-accent: var(--sakura-a);
+  }
+
+  /* ------------------------------------------------------------------
+     Petal palettes -> UI accent tokens.
+     <html data-petal-palette> is set before paint (Layout inline script) and
+     on every selection (src/lib/petalPalette.ts), so highlights, borders and
+     glows recolour together with the canvas petals. Light-mode values are
+     darkened to keep >= 4.5:1 contrast for accent text on #FAF7F8.
+     ------------------------------------------------------------------ */
+  :root[data-theme='dark'][data-petal-palette='golden'] {
+    --sakura-a: 255 215 0;
+    --sakura-b: 255 233 138;
+    --hover-tint: 255 233 138;
+    --selection-bg: 255 215 0;
+  }
+  :root[data-theme='light'][data-petal-palette='golden'] {
+    --sakura-a: 138 98 0;
+    --sakura-b: 209 154 0;
+    --hover-tint: 138 98 0;
+    --selection-bg: 242 203 92;
+  }
+  :root[data-theme='dark'][data-petal-palette='velvet'] {
+    --sakura-a: 233 30 110;
+    --sakura-b: 240 98 146;
+    --hover-tint: 244 143 177;
+    --selection-bg: 233 30 110;
+    --selection-fg: 249 249 251;
+  }
+  :root[data-theme='light'][data-petal-palette='velvet'] {
+    --sakura-a: 176 18 78;
+    --sakura-b: 224 87 138;
+    --hover-tint: 176 18 78;
+    --selection-bg: 224 87 138;
+  }
+  :root[data-theme='dark'][data-petal-palette='ghost'] {
+    --sakura-a: 250 250 250;
+    --sakura-b: 221 226 240;
+    --hover-tint: 255 255 255;
+    --selection-bg: 250 250 250;
+  }
+  :root[data-theme='light'][data-petal-palette='ghost'] {
+    --sakura-a: 92 86 112;
+    --sakura-b: 143 136 158;
+    --hover-tint: 92 86 112;
+    --selection-bg: 200 196 214;
+  }
+
+  html {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    font-family: theme('fontFamily.sans');
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: auto; /* Lenis owns smooth scrolling (Phase 4). */
+    overflow-x: clip;
+  }
+
+  /* No body background: <html> paints it, so the fixed canvas (z -10) shows
+     through above it and behind the page content. */
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    color: rgb(var(--fg));
+    overflow-x: clip;
+  }
+
+  /* Smooth colour handoff on theme change, but never on first paint. */
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition:
+      background-color 0.45s ease,
+      color 0.45s ease,
+      border-color 0.45s ease,
+      fill 0.45s ease,
+      stroke 0.45s ease,
+      box-shadow 0.45s ease !important;
+  }
+
+  ::selection {
+    background-color: rgb(var(--selection-bg) / 0.85);
+    color: rgb(var(--selection-fg));
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--sakura-a));
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  /* Slim, themed scrollbar. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--sakura-a) / 0.45) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--sakura-a) / 0.4);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Components: glassmorphism + neon borders
+   -------------------------------------------------------------------------- */
+@layer components {
+  /* Base frosted-glass surface. */
+  .glass {
+    background-color: rgb(var(--surface) / var(--surface-alpha));
+    border: 1px solid rgb(var(--line) / var(--line-alpha));
+    box-shadow: var(--glass-shadow);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(140%);
+  }
+
+  .glass-strong {
+    background-color: rgb(var(--surface) / calc(var(--surface-alpha) * 2));
+    border: 1px solid rgb(var(--line) / calc(var(--line-alpha) * 1.5));
+    box-shadow: var(--glass-shadow);
+    -webkit-backdrop-filter: blur(32px) saturate(160%);
+    backdrop-filter: blur(32px) saturate(160%);
+  }
+
+  /* Pill-shaped glass control (header, toggle, chips). */
+  .glass-pill {
+    @apply glass rounded-full;
+  }
+
+  /* Interactive glass card with a glowing neon border on hover/focus.
+     The border is drawn with a masked gradient pseudo-element so the card
+     interior stays fully transparent (works with backdrop blur). */
+  .glass-card {
+    @apply glass relative isolate overflow-hidden rounded-3xl;
+    transition:
+      transform 0.5s theme('transitionTimingFunction.out-expo'),
+      background-color 0.4s ease,
+      box-shadow 0.4s ease;
+  }
+
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--sweep-angle),
+      rgb(var(--sakura-a) / 0) 0deg,
+      rgb(var(--sakura-a) / 0.95) 70deg,
+      rgb(var(--sakura-b) / 0.95) 140deg,
+      rgb(var(--sakura-a) / 0) 220deg,
+      rgb(var(--sakura-a) / 0) 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    opacity: 0;
+    transition: opacity 0.45s ease;
+    pointer-events: none;
+  }
+
+  .glass-card::after {
+    /* Soft internal glow that follows hover. */
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      80% 60% at 50% 0%,
+      rgb(var(--sakura-a) / 0.14) 0%,
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.45s ease;
+    pointer-events: none;
+  }
+
+  .glass-card:hover,
+  .glass-card:focus-within {
+    transform: translate3d(0, -6px, 0);
+    background-color: rgb(var(--surface) / var(--surface-alpha-hover));
+    box-shadow:
+      var(--glass-shadow),
+      0 0 40px -10px rgb(var(--sakura-a) / 0.45);
+  }
+
+  .glass-card:hover::before,
+  .glass-card:focus-within::before {
+    opacity: 1;
+    animation: border-sweep 6s linear infinite;
+  }
+
+  .glass-card:hover::after,
+  .glass-card:focus-within::after {
+    opacity: 1;
+  }
+
+  /* Pink glowing gradient text for accent words. */
+  .text-sakura-gradient {
+    background-image: linear-gradient(
+      120deg,
+      rgb(var(--sakura-a)) 0%,
+      rgb(var(--sakura-b)) 50%,
+      rgb(var(--sakura-a)) 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    filter: drop-shadow(0 0 22px rgb(var(--sakura-a) / 0.45));
+    animation: gradient-shift 8s ease-in-out infinite;
+  }
+
+  /* Accent-word typography: Cormorant Garamond italic. */
+  .accent-serif {
+    font-family: theme('fontFamily.display');
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    font-synthesis: none;
+    font-optical-sizing: auto;
+    font-feature-settings: 'kern', 'liga', 'calt';
+  }
+
+  /* ------------------------------------------------------------------
+     Glassmorphism button system
+     .btn-glass            base glass pill (all CTAs and controls)
+     .btn-glass-primary    sakura-tinted variant for the main action
+     .btn-glass-icon       square 44px icon button
+     ------------------------------------------------------------------ */
+  .btn-glass {
+    @apply relative isolate inline-flex cursor-pointer select-none items-center justify-center gap-2 overflow-hidden rounded-full border border-white/20 bg-white/10 px-7 py-3.5 text-sm font-semibold tracking-wide text-fg shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] backdrop-blur-md dark:border-white/10 dark:bg-white/5;
+    /* Spring-like overshoot on the transform, calm easing on colour. */
+    transition:
+      transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+      border-color 0.35s ease,
+      background-color 0.35s ease,
+      box-shadow 0.45s ease;
+  }
+
+  /* Inner light streak, parked off to the left until hover. */
+  .btn-glass::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    background: linear-gradient(
+      105deg,
+      transparent 32%,
+      rgb(255 255 255 / 0.05) 42%,
+      rgb(255 255 255 / 0.42) 50%,
+      rgb(255 255 255 / 0.05) 58%,
+      transparent 68%
+    );
+    transform: translateX(-130%);
+    transition: transform 0s;
+    pointer-events: none;
+  }
+
+  .btn-glass:hover,
+  .btn-glass:focus-visible {
+    @apply scale-[1.02] border-sakura-a/60;
+    box-shadow:
+      0 8px 32px 0 rgba(0, 0, 0, 0.37),
+      0 0 26px -4px rgb(var(--sakura-a) / 0.55),
+      inset 0 0 0 1px rgb(var(--sakura-a) / 0.18);
+  }
+
+  .btn-glass:hover::before,
+  .btn-glass:focus-visible::before {
+    transform: translateX(130%);
+    transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .btn-glass:active {
+    @apply scale-[0.985];
+  }
+
+  .btn-glass:disabled {
+    @apply pointer-events-none opacity-60;
+  }
+
+  .btn-glass-primary {
+    background-image: linear-gradient(
+      120deg,
+      rgb(var(--sakura-a) / 0.34) 0%,
+      rgb(var(--sakura-b) / 0.14) 100%
+    );
+    border-color: rgb(var(--sakura-a) / 0.42);
+  }
+
+  .btn-glass-icon {
+    @apply h-11 w-11 p-0;
+  }
+
+  /* Light theme: the requested dark drop shadow is far too heavy on blossom. */
+  :root[data-theme='light'] .btn-glass {
+    background-color: rgb(255 255 255 / 0.55);
+    border-color: rgb(var(--line) / 0.12);
+    box-shadow: 0 8px 28px -10px rgb(120 60 85 / 0.32);
+  }
+  :root[data-theme='light'] .btn-glass:hover,
+  :root[data-theme='light'] .btn-glass:focus-visible {
+    background-color: rgb(255 255 255 / 0.8);
+    box-shadow:
+      0 10px 30px -10px rgb(120 60 85 / 0.35),
+      0 0 26px -6px rgb(var(--sakura-a) / 0.5);
+  }
+  :root[data-theme='light'] .btn-glass::before {
+    background: linear-gradient(
+      105deg,
+      transparent 32%,
+      rgb(255 255 255 / 0.2) 42%,
+      rgb(255 255 255 / 0.95) 50%,
+      rgb(255 255 255 / 0.2) 58%,
+      transparent 68%
+    );
+  }
+
+  /* ------------------------------------------------------------------
+     Cursor-proximity text (driven by src/scripts/proximity.ts)
+     --prox: 0..1, how close the cursor is to the element.
+     ------------------------------------------------------------------ */
+  .i-text {
+    --prox: 0;
+    --i-base: rgb(var(--fg));
+    color: var(--i-base);
+    transform: translate3d(0, calc(var(--prox) * -1.5px), 0);
+    /* Subtle halo: 0 2px 12px at 35% accent glow when fully "hot". */
+    text-shadow: 0 calc(var(--prox) * 2px) calc(var(--prox) * 12px)
+      rgb(var(--accent-glow) / calc(var(--prox) * 0.35));
+  }
+  .i-text-muted {
+    --i-base: rgb(var(--fg-muted));
+  }
+  @supports (color: color-mix(in srgb, red 50%, blue)) {
+    .i-text {
+      /* Never fully replaces the base colour, so body copy stays legible. */
+      color: color-mix(
+        in srgb,
+        var(--i-base) calc(100% - var(--prox) * 60%),
+        rgb(var(--hover-tint))
+      );
+    }
+  }
+  /* Gradient-filled words keep their own fill; only the halo reacts. */
+  .i-text .text-sakura-gradient {
+    color: transparent;
+  }
+
+  /* ------------------------------------------------------------------
+     Form fields (glass)
+     ------------------------------------------------------------------ */
+  .field {
+    @apply w-full rounded-2xl border border-white/15 bg-white/5 px-5 py-3.5 text-base text-fg backdrop-blur-md placeholder:text-fg-muted/70;
+    outline: none;
+    transition:
+      border-color 0.3s ease,
+      box-shadow 0.4s ease,
+      background-color 0.3s ease;
+  }
+  .field:hover {
+    border-color: rgb(var(--sakura-a) / 0.35);
+  }
+  .field:focus {
+    border-color: rgb(var(--sakura-a) / 0.7);
+    box-shadow: 0 0 0 4px rgb(var(--sakura-a) / 0.14);
+    background-color: rgb(255 255 255 / 0.08);
+  }
+  .field[aria-invalid='true'] {
+    border-color: rgb(255 96 110 / 0.7);
+  }
+  :root[data-theme='light'] .field {
+    background-color: rgb(255 255 255 / 0.7);
+    border-color: rgb(var(--line) / 0.14);
+  }
+  select.field {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1.1rem center;
+    padding-right: 3rem;
+  }
+  select.field option {
+    color: #111;
+    background: #fff;
+  }
+
+  /* ------------------------------------------------------------------
+     Process timeline (see Process.astro)
+     ------------------------------------------------------------------ */
+  .timeline-step {
+    @apply glass relative flex w-full flex-col items-start justify-start rounded-3xl p-6 text-left;
+    transition:
+      transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+      border-color 0.35s ease,
+      background-color 0.35s ease,
+      box-shadow 0.4s ease;
+  }
+  .timeline-step:hover {
+    transform: translate3d(0, -4px, 0);
+    border-color: rgb(var(--sakura-a) / 0.4);
+  }
+  .timeline-step[aria-selected='true'] {
+    border-color: rgb(var(--sakura-a) / 0.65);
+    background-color: rgb(var(--sakura-a) / 0.1);
+    box-shadow:
+      var(--glass-shadow),
+      0 0 40px -12px rgb(var(--sakura-a) / 0.6);
+  }
+  .timeline-node {
+    @apply relative mb-5 block h-3.5 w-3.5 rounded-full border border-fg/30 bg-bg;
+    transition:
+      background-color 0.4s ease,
+      border-color 0.4s ease,
+      box-shadow 0.4s ease,
+      transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .timeline-step[data-state='done'] .timeline-node,
+  .timeline-step[data-state='active'] .timeline-node {
+    background-color: rgb(var(--sakura-a));
+    border-color: rgb(var(--sakura-a));
+    box-shadow: 0 0 16px 1px rgb(var(--sakura-a) / 0.8);
+  }
+  .timeline-step[data-state='active'] .timeline-node {
+    transform: scale(1.35);
+  }
+  /* Connector to the next step: vertical on mobile, horizontal on desktop. */
+  .timeline-connector {
+    position: absolute;
+    left: calc(1.94rem - 0.5px);
+    top: 2.4rem;
+    width: 1px;
+    height: calc(100% + 0.54rem);
+    background: rgb(var(--fg) / 0.14);
+    overflow: hidden;
+  }
+  .timeline-connector::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgb(var(--sakura-a)), rgb(var(--sakura-b)));
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .timeline-step[data-state='done'] .timeline-connector::after {
+    transform: scaleY(1);
+  }
+  @media (min-width: 1024px) {
+    .timeline-connector {
+      left: 2.4rem;
+      top: calc(1.94rem - 0.5px);
+      width: calc(100% + 0.54rem);
+      height: 1px;
+    }
+    .timeline-connector::after {
+      background: linear-gradient(to right, rgb(var(--sakura-a)), rgb(var(--sakura-b)));
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+    .timeline-step[data-state='done'] .timeline-connector::after {
+      transform: scaleX(1);
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Utilities
+   -------------------------------------------------------------------------- */
+@layer utilities {
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .gpu {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+}
+
+/* A display utility (e.g. `grid`) must never defeat the hidden attribute. */
+[hidden] {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   Scroll reveal (see src/scripts/reveal.ts). Hidden only when JS is running.
+   -------------------------------------------------------------------------- */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition:
+    opacity 0.9s ease var(--reveal-delay, 0ms),
+    transform 1s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0ms);
+}
+.js [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion: keep layout, drop movement.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   Ambient atmosphere + footer mountains (palette-aware via --sakura-*)
+   -------------------------------------------------------------------------- */
+@layer components {
+  .ambient-bg {
+    background:
+      radial-gradient(60vmax 45vmax at 12% 8%, rgb(var(--accent-glow) / 0.07), transparent 65%),
+      radial-gradient(55vmax 40vmax at 92% 46%, rgb(var(--sakura-b) / 0.05), transparent 70%),
+      radial-gradient(70vmax 40vmax at 30% 100%, rgb(var(--accent-glow) / 0.06), transparent 70%);
+  }
+  :root[data-theme='light'] .ambient-bg {
+    background:
+      radial-gradient(60vmax 45vmax at 12% 8%, rgb(var(--accent-glow) / 0.08), transparent 65%),
+      radial-gradient(55vmax 40vmax at 92% 46%, rgb(var(--sakura-b) / 0.09), transparent 70%),
+      radial-gradient(70vmax 40vmax at 30% 100%, rgb(var(--accent-glow) / 0.07), transparent 70%);
+  }
+
+    .s-a{stop-color:rgb(var(--sakura-a))}.s-b{stop-color:rgb(var(--sakura-b))}.s-fg{stop-color:rgb(var(--fg))}.s-bg{stop-color:rgb(var(--bg))}.s-mist{stop-color:rgb(var(--sakura-b))}
+  .ls-disc{fill:rgb(var(--text-accent) / 0.85)}
+  .ls-ridge{fill:none;stroke:rgb(var(--border-accent) / 0.4);stroke-linecap:round}
+  .ls-fore{fill:rgb(var(--bg))}
+  .ls-fog{mix-blend-mode:normal}
+  .bird-silhouette{fill:rgb(var(--fg) / 0.55)}
+
+  .ls-birds { animation: bird-drift 42s linear infinite alternate; }
+}
+
+@keyframes bird-drift {
+  from { transform: translate3d(-70px, 6px, 0); }
+  to { transform: translate3d(90px, -8px, 0); }
+}

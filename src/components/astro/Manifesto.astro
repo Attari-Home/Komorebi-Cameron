@@ -1,0 +1,69 @@
+---
+import Container from './Container.astro';
+import { PRINCIPLES } from '../../data/content';
+---
+
+<section id="manifesto" aria-labelledby="manifesto-heading" class="relative scroll-mt-24 py-28 lg:py-44">
+  <Container>
+    <div data-reveal>
+      <p class="mb-8 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted">
+        <span aria-hidden="true" class="h-px w-10 bg-sakura-gradient"></span>
+        Manifesto
+      </p>
+
+      <h2
+        id="manifesto-heading"
+        class="i-text text-balance font-sans text-display-lg font-semibold"
+      >
+        The web should be
+        <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] -mr-[0.02em] pr-[0.02em] text-[1.12em] leading-[0.9]">felt</em>,
+        not merely seen.
+      </h2>
+    </div>
+
+    <div class="mt-16 grid gap-12 lg:mt-24 lg:grid-cols-12 lg:gap-16">
+      <div class="space-y-8 lg:col-span-7" data-reveal style="--reveal-delay: 100ms">
+        <p class="i-text i-text-muted text-pretty text-xl leading-relaxed sm:text-2xl">
+          Most websites are built to be looked at. We build ours to be
+          remembered. Between the first paint and the final scroll there is a
+          quiet stretch of attention, and we treat it as something precious.
+        </p>
+        <p class="i-text i-text-muted text-pretty text-lg leading-relaxed sm:text-xl">
+          Our studio sits where design, engineering and performance overlap.
+          We write every line ourselves, choose every curve deliberately, and
+          hold each project to a simple standard: it should load instantly,
+          rank honestly, and leave a small impression that lingers.
+        </p>
+      </div>
+
+      <aside class="lg:col-span-5" data-reveal style="--reveal-delay: 220ms">
+        <div class="glass rounded-3xl p-8 sm:p-10">
+          <p lang="ja" class="text-6xl font-semibold tracking-wide text-sakura-a sm:text-7xl">木漏れ日</p>
+          <p class="mt-6 text-sm font-medium uppercase tracking-[0.24em] text-fg-muted">
+            <span class="accent-serif text-xl normal-case tracking-normal text-fg">Komorebi</span>
+            &nbsp;/ ko·mo·re·bi
+          </p>
+          <p class="i-text i-text-muted mt-4 leading-relaxed">
+            The interplay of light and leaves: sunlight filtering through
+            trees, shifting with every breath of wind. A word with no direct
+            translation, and the feeling we design for.
+          </p>
+        </div>
+      </aside>
+    </div>
+
+    <ul class="mt-20 grid gap-5 md:grid-cols-3 lg:mt-28">
+      {
+        PRINCIPLES.map((p, i) => (
+          <li data-reveal style={`--reveal-delay: ${i * 120}ms`}>
+            <div class="glass h-full rounded-3xl p-8">
+              <p class="text-xs font-medium uppercase tracking-[0.28em] text-sakura-a">0{i + 1}</p>
+              <h3 class="i-text accent-serif mt-5 text-4xl">{p.title}</h3>
+              <p class="i-text i-text-muted mt-4 leading-relaxed">{p.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </Container>
+</section>

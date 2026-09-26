@@ -1,0 +1,65 @@
+---
+import Container from './Container.astro';
+import { SITE } from '../../data/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="relative border-t border-line/10 pb-12 pt-16">
+  <Container as="div">
+    <div class="flex flex-col gap-12 md:flex-row md:items-start md:justify-between">
+      <div class="max-w-sm">
+        <p class="text-lg font-semibold tracking-wide">
+          Komorebi <span class="accent-serif text-2xl">Cameron</span>
+        </p>
+        <p class="i-text i-text-muted mt-4 leading-relaxed">
+          A luxury studio for web development and creative engineering.
+          Crafting unforgettable digital experiences.
+        </p>
+      </div>
+
+      <nav aria-label="Footer" class="grid grid-cols-2 gap-x-14 gap-y-3 text-sm">
+        {
+          SITE.nav.map((item) => (
+            <a
+              href={item.href}
+              class="text-fg-muted transition-colors duration-300 hover:text-sakura-a"
+            >
+              {item.label}
+            </a>
+          ))
+        }
+        <a
+          href={`mailto:${SITE.contact.email}`}
+          class="text-fg-muted transition-colors duration-300 hover:text-sakura-a"
+        >
+          Email us
+        </a>
+      </nav>
+
+      <a href="#top" class="btn-glass self-start">
+        Back to top
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 19V5M6 11l6-6 6 6" />
+        </svg>
+      </a>
+    </div>
+
+    <div
+      class="mt-14 flex flex-col gap-3 border-t border-line/10 pt-8 text-xs text-fg-muted sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p>© {year} {SITE.legalName}. All rights reserved.</p>
+      <p>Designed and engineered with care.</p>
+    </div>
+  </Container>
+</footer>

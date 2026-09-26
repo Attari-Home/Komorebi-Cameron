@@ -1,0 +1,103 @@
+---
+import Container from './Container.astro';
+import { STATS } from '../../data/content';
+
+const format = (value: number, decimals: number) => value.toFixed(decimals);
+---
+
+<section id="impact" aria-labelledby="impact-heading" class="relative scroll-mt-24 py-28 lg:py-40">
+  <Container>
+    <div class="max-w-3xl" data-reveal>
+      <p class="mb-8 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted">
+        <span aria-hidden="true" class="h-px w-10 bg-sakura-gradient"></span>
+        Client impact
+      </p>
+      <h2 id="impact-heading" class="i-text text-balance font-sans text-display-lg font-semibold">
+        Beauty that also
+        <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] -mr-[0.02em] pr-[0.02em] text-[1.12em] leading-[0.9]">performs</em>.
+      </h2>
+    </div>
+
+    <dl class="glass-strong mt-16 grid overflow-hidden rounded-[2rem] sm:grid-cols-2 lg:mt-24 lg:grid-cols-4" data-reveal style="--reveal-delay: 120ms">
+      {
+        STATS.map((stat, i) => (
+          <div
+            class:list={[
+              'relative flex flex-col justify-between gap-10 p-8 sm:p-10',
+              i > 0 && 'border-t border-line/10 sm:border-t-0',
+              i % 2 === 1 && 'sm:border-l sm:border-line/10',
+              i >= 2 && 'sm:border-t sm:border-line/10 lg:border-t-0',
+              i > 0 && 'lg:border-l lg:border-line/10',
+            ]}
+          >
+            <dt class="i-text i-text-muted order-2 text-sm leading-relaxed">
+              <span class="block font-semibold text-fg">{stat.label}</span>
+              <span class="mt-1 block text-fg-muted">{stat.note}</span>
+            </dt>
+            <dd class="order-1 m-0">
+              <span
+                class="text-sakura-gradient inline-block font-sans text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl"
+                data-count-to={stat.value}
+                data-count-decimals={stat.decimals}
+                data-count-prefix={stat.prefix}
+                data-count-suffix={stat.suffix}
+              >
+                {stat.prefix}{format(stat.value, stat.decimals)}{stat.suffix}
+              </span>
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    <p class="mt-6 text-center text-xs text-fg-muted" data-reveal>
+      Placeholder figures for layout; replace with verified client data before launch.
+    </p>
+  </Container>
+</section>
+
+<script>
+  /**
+   * Animated counters. The HTML already contains the final values (good for
+   * SEO and no-JS visitors); when JS runs, each counter resets to zero and
+   * counts up once as it scrolls into view.
+   */
+  const counters = Array.from(document.querySelectorAll<HTMLElement>('[data-count-to]'));
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (counters.length > 0 && !reduced && 'IntersectionObserver' in window) {
+    const render = (el: HTMLElement, value: number): void => {
+      const decimals = Number(el.dataset.countDecimals ?? 0);
+      el.textContent = `${el.dataset.countPrefix ?? ''}${value.toFixed(decimals)}${el.dataset.countSuffix ?? ''}`;
+    };
+
+    counters.forEach((el) => render(el, 0));
+
+    const easeOutExpo = (t: number): number => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+
+    const animate = (el: HTMLElement): void => {
+      const target = Number(el.dataset.countTo ?? 0);
+      const duration = 1900;
+      const start = performance.now();
+
+      const tick = (now: number): void => {
+        const t = Math.min((now - start) / duration, 1);
+        render(el, target * easeOutExpo(t));
+        if (t < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          animate(entry.target as HTMLElement);
+          io.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.6 },
+    );
+    counters.forEach((el) => io.observe(el));
+  }
+</script>

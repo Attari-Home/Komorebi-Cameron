@@ -1,31 +1,23 @@
 ---
 /**
- * Hero.astro — static, SEO-visible hero shell.
+ * Hero.astro — static, SEO-visible hero.
  *
- * Everything here is server-rendered HTML with zero JavaScript. The interactive
- * canvas (branches + petals) mounts into #hero-canvas-root in Phase 3, and the
- * Guide Petal in Phase 5. The headline is intentionally NOT animated so it
- * paints immediately and counts as the Largest Contentful Paint.
+ * Server-rendered HTML with zero JavaScript. The canvas engine is a fixed
+ * layer mounted from Layout.astro, so it shows through this section and
+ * continues behind the rest of the page. The headline is intentionally NOT
+ * animated so it paints immediately and counts as the Largest Contentful
+ * Paint.
  */
-import CanvasStage from '../react/CanvasStage';
+import Container from './Container.astro';
 import { SITE } from '../../data/site';
 ---
 
 <section
-  id="hero"
+  id="top"
   aria-labelledby="hero-heading"
   class="relative isolate flex min-h-[100svh] items-center overflow-hidden"
   data-hero
 >
-  <!-- Canvas mount point (Phase 3). Decorative only, hidden from assistive tech. -->
-  <div
-    id="hero-canvas-root"
-    aria-hidden="true"
-    class="pointer-events-none absolute inset-0 -z-10"
-  >
-    <CanvasStage client:only="react" />
-  </div>
-
   <!-- Ambient glow behind the headline. Pure CSS. -->
   <div
     aria-hidden="true"
@@ -33,13 +25,11 @@ import { SITE } from '../../data/site';
   >
   </div>
 
-  <div class="mx-auto w-full max-w-7xl px-5 pb-24 pt-32 sm:px-8 lg:px-12">
+  <Container class="pb-28 pt-32">
     <p
       class="mb-8 inline-flex animate-fade-rise items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted"
     >
-      <span
-        aria-hidden="true"
-        class="h-px w-10 bg-sakura-gradient"></span>
+      <span aria-hidden="true" class="h-px w-10 bg-sakura-gradient"></span>
       {SITE.tagline}
     </p>
 
@@ -49,14 +39,14 @@ import { SITE } from '../../data/site';
     >
       Crafting
       <em
-        class="accent-serif text-sakura-gradient inline-block pb-[0.12em] pr-[0.08em] font-medium"
+        class="accent-serif text-sakura-gradient inline-block pb-[0.14em] pr-[0.1em] text-[1.14em] font-medium leading-[0.86]"
         >Unforgettable</em
       >
       Digital Experiences.
     </h1>
 
     <p
-      class="mt-10 max-w-2xl animate-fade-rise text-pretty text-lg leading-relaxed text-fg-muted [animation-delay:150ms] sm:text-xl"
+      class="i-text i-text-muted mt-10 max-w-2xl animate-fade-rise text-pretty text-lg leading-relaxed [animation-delay:150ms] sm:text-xl"
     >
       {SITE.name} is a luxury studio for bespoke web development, creative
       canvas engineering, and performance-first architecture — built to be felt
@@ -66,10 +56,10 @@ import { SITE } from '../../data/site';
     <div
       class="mt-12 flex animate-fade-rise flex-wrap items-center gap-4 [animation-delay:300ms]"
     >
-      <a href="#services" class="btn-sakura">Explore our craft</a>
-      <a href="#contact" class="btn-ghost">Start a project</a>
+      <a href="#services" class="btn-glass btn-glass-primary">Explore our craft</a>
+      <a href="#contact" class="btn-glass">Start a project</a>
     </div>
-  </div>
+  </Container>
 
   <!-- Scroll cue -->
   <div

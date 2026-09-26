@@ -10,12 +10,15 @@
  */
 import '@fontsource-variable/plus-jakarta-sans/wght.css';
 import '@fontsource/cormorant-garamond/latin-500-italic.css';
+import '@fontsource/cormorant-garamond/latin-400-italic.css';
 import '../styles/global.css';
 
 import jakartaFont from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url';
 import cormorantItalicFont from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-500-italic.woff2?url';
 
 import SmoothScrollProvider from '../components/react/SmoothScrollProvider';
+import CanvasStage from '../components/react/CanvasStage';
+import GuidePetal from '../components/react/GuidePetal';
 import { SITE } from '../data/site';
 
 interface Props {
@@ -112,6 +115,7 @@ const jsonLd = {
           }
         }
         var root = document.documentElement;
+        root.classList.add('js');
         root.setAttribute('data-theme', theme);
         root.style.colorScheme = theme;
         var meta = document.querySelector('meta[name="theme-color"]');
@@ -171,7 +175,7 @@ const jsonLd = {
     <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
   </head>
 
-  <body class="bg-bg font-sans text-fg antialiased">
+  <body class="font-sans text-fg antialiased">
     <a
       href="#main"
       class="sr-only-focusable fixed left-4 top-4 z-[100] rounded-full bg-sakura-a px-5 py-2.5 text-sm font-semibold text-obsidian"
@@ -179,8 +183,27 @@ const jsonLd = {
       Skip to content
     </a>
 
+    <!--
+      Fixed, full-viewport canvas behind all content (petals fall through the
+      whole page; branches fade out after the hero). 100lvh so mobile URL-bar
+      changes never resize it.
+    -->
+    <div
+      id="canvas-root"
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-x-0 top-0 -z-10"
+      style="height: 100vh; height: 100lvh"
+    >
+      <CanvasStage client:only="react" />
+    </div>
+
     <SmoothScrollProvider client:only="react" />
+    <GuidePetal client:only="react" />
 
     <slot />
+
+    <script>
+      import '../scripts/enhance';
+    </script>
   </body>
 </html>

@@ -32,13 +32,8 @@ export default function ThemeToggle() {
       aria-label={label}
       title={label}
       aria-pressed={!isDark}
-      className="glass-pill group relative grid h-11 w-11 place-items-center overflow-hidden text-fg transition-[transform,border-color] duration-500 ease-out-expo hover:-translate-y-0.5 hover:border-sakura-a/50 active:scale-95"
+      className="btn-glass btn-glass-icon"
     >
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-full bg-radial-glow opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-      />
-
       {/* key forces the spin-in animation to replay on every switch */}
       <span key={theme} className="relative animate-theme-spin">
         {isDark ? <MoonIcon /> : <SunIcon />}

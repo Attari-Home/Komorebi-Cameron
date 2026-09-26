@@ -40,6 +40,7 @@
       inset 0 1px 0 0 rgb(255 255 255 / 0.06);
     --selection-bg: 255 112 166;
     --selection-fg: 10 10 12;
+    --hover-tint: 255 183 197; /* text colour the proximity effect warms toward */
   }
 
   :root[data-theme='light'] {
@@ -60,6 +61,7 @@
       inset 0 1px 0 0 rgb(255 255 255 / 0.9);
     --selection-bg: 255 112 166;
     --selection-fg: 26 20 24;
+    --hover-tint: 226 58 121;
   }
 
   html {
@@ -73,10 +75,11 @@
     overflow-x: clip;
   }
 
+  /* No body background: <html> paints it, so the fixed canvas (z -10) shows
+     through above it and behind the page content. */
   body {
     min-height: 100vh;
     min-height: 100dvh;
-    background-color: rgb(var(--bg));
     color: rgb(var(--fg));
     overflow-x: clip;
   }
@@ -247,34 +250,251 @@
     font-family: theme('fontFamily.display');
     font-style: italic;
     font-weight: 500;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
+    font-synthesis: none;
+    font-optical-sizing: auto;
+    font-feature-settings: 'kern', 'liga', 'calt';
   }
 
-  /* Primary call-to-action button. */
-  .btn-sakura {
-    @apply relative inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold tracking-wide;
-    color: rgb(10 10 12);
-    background-image: linear-gradient(120deg, rgb(255 112 166), rgb(255 183 197));
-    box-shadow: 0 10px 30px -10px rgb(255 112 166 / 0.7);
+  /* ------------------------------------------------------------------
+     Glassmorphism button system
+     .btn-glass            base glass pill (all CTAs and controls)
+     .btn-glass-primary    sakura-tinted variant for the main action
+     .btn-glass-icon       square 44px icon button
+     ------------------------------------------------------------------ */
+  .btn-glass {
+    @apply relative isolate inline-flex cursor-pointer select-none items-center justify-center gap-2 overflow-hidden rounded-full border border-white/20 bg-white/10 px-7 py-3.5 text-sm font-semibold tracking-wide text-fg shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] backdrop-blur-md dark:border-white/10 dark:bg-white/5;
+    /* Spring-like overshoot on the transform, calm easing on colour. */
     transition:
-      transform 0.4s theme('transitionTimingFunction.out-expo'),
+      transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+      border-color 0.35s ease,
+      background-color 0.35s ease,
+      box-shadow 0.45s ease;
+  }
+
+  /* Inner light streak, parked off to the left until hover. */
+  .btn-glass::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    background: linear-gradient(
+      105deg,
+      transparent 32%,
+      rgb(255 255 255 / 0.05) 42%,
+      rgb(255 255 255 / 0.42) 50%,
+      rgb(255 255 255 / 0.05) 58%,
+      transparent 68%
+    );
+    transform: translateX(-130%);
+    transition: transform 0s;
+    pointer-events: none;
+  }
+
+  .btn-glass:hover,
+  .btn-glass:focus-visible {
+    @apply scale-[1.02] border-sakura-a/60;
+    box-shadow:
+      0 8px 32px 0 rgba(0, 0, 0, 0.37),
+      0 0 26px -4px rgb(var(--sakura-a) / 0.55),
+      inset 0 0 0 1px rgb(var(--sakura-a) / 0.18);
+  }
+
+  .btn-glass:hover::before,
+  .btn-glass:focus-visible::before {
+    transform: translateX(130%);
+    transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .btn-glass:active {
+    @apply scale-[0.985];
+  }
+
+  .btn-glass:disabled {
+    @apply pointer-events-none opacity-60;
+  }
+
+  .btn-glass-primary {
+    background-image: linear-gradient(
+      120deg,
+      rgb(var(--sakura-a) / 0.34) 0%,
+      rgb(var(--sakura-b) / 0.14) 100%
+    );
+    border-color: rgb(var(--sakura-a) / 0.42);
+  }
+
+  .btn-glass-icon {
+    @apply h-11 w-11 p-0;
+  }
+
+  /* Light theme: the requested dark drop shadow is far too heavy on blossom. */
+  :root[data-theme='light'] .btn-glass {
+    background-color: rgb(255 255 255 / 0.55);
+    border-color: rgb(var(--line) / 0.12);
+    box-shadow: 0 8px 28px -10px rgb(120 60 85 / 0.32);
+  }
+  :root[data-theme='light'] .btn-glass:hover,
+  :root[data-theme='light'] .btn-glass:focus-visible {
+    background-color: rgb(255 255 255 / 0.8);
+    box-shadow:
+      0 10px 30px -10px rgb(120 60 85 / 0.35),
+      0 0 26px -6px rgb(var(--sakura-a) / 0.5);
+  }
+  :root[data-theme='light'] .btn-glass::before {
+    background: linear-gradient(
+      105deg,
+      transparent 32%,
+      rgb(255 255 255 / 0.2) 42%,
+      rgb(255 255 255 / 0.95) 50%,
+      rgb(255 255 255 / 0.2) 58%,
+      transparent 68%
+    );
+  }
+
+  /* ------------------------------------------------------------------
+     Cursor-proximity text (driven by src/scripts/proximity.ts)
+     --prox: 0..1, how close the cursor is to the element.
+     ------------------------------------------------------------------ */
+  .i-text {
+    --prox: 0;
+    --i-base: rgb(var(--fg));
+    color: var(--i-base);
+    transform: translate3d(0, calc(var(--prox) * -2px), 0);
+    text-shadow:
+      0 0 calc(var(--prox) * 22px) rgb(var(--sakura-a) / calc(var(--prox) * 0.62)),
+      0 0 calc(var(--prox) * 6px) rgb(var(--sakura-b) / calc(var(--prox) * 0.4));
+  }
+  .i-text-muted {
+    --i-base: rgb(var(--fg-muted));
+  }
+  @supports (color: color-mix(in srgb, red 50%, blue)) {
+    .i-text {
+      color: color-mix(
+        in srgb,
+        var(--i-base) calc((1 - var(--prox)) * 100%),
+        rgb(var(--hover-tint))
+      );
+    }
+  }
+  /* Gradient-filled words keep their own fill; only the halo reacts. */
+  .i-text .text-sakura-gradient {
+    color: transparent;
+  }
+
+  /* ------------------------------------------------------------------
+     Form fields (glass)
+     ------------------------------------------------------------------ */
+  .field {
+    @apply w-full rounded-2xl border border-white/15 bg-white/5 px-5 py-3.5 text-base text-fg backdrop-blur-md placeholder:text-fg-muted/70;
+    outline: none;
+    transition:
+      border-color 0.3s ease,
+      box-shadow 0.4s ease,
+      background-color 0.3s ease;
+  }
+  .field:hover {
+    border-color: rgb(var(--sakura-a) / 0.35);
+  }
+  .field:focus {
+    border-color: rgb(var(--sakura-a) / 0.7);
+    box-shadow: 0 0 0 4px rgb(var(--sakura-a) / 0.14);
+    background-color: rgb(255 255 255 / 0.08);
+  }
+  .field[aria-invalid='true'] {
+    border-color: rgb(255 96 110 / 0.7);
+  }
+  :root[data-theme='light'] .field {
+    background-color: rgb(255 255 255 / 0.7);
+    border-color: rgb(var(--line) / 0.14);
+  }
+  select.field {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1.1rem center;
+    padding-right: 3rem;
+  }
+  select.field option {
+    color: #111;
+    background: #fff;
+  }
+
+  /* ------------------------------------------------------------------
+     Process timeline (see Process.astro)
+     ------------------------------------------------------------------ */
+  .timeline-step {
+    @apply glass relative flex w-full flex-col items-start justify-start rounded-3xl p-6 text-left;
+    transition:
+      transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+      border-color 0.35s ease,
+      background-color 0.35s ease,
       box-shadow 0.4s ease;
   }
-  .btn-sakura:hover {
-    transform: translate3d(0, -2px, 0);
-    box-shadow: 0 16px 40px -10px rgb(255 112 166 / 0.85);
+  .timeline-step:hover {
+    transform: translate3d(0, -4px, 0);
+    border-color: rgb(var(--sakura-a) / 0.4);
   }
-
-  /* Ghost glass button. */
-  .btn-ghost {
-    @apply glass-pill inline-flex items-center justify-center gap-2 px-7 py-3.5 text-sm font-semibold tracking-wide;
+  .timeline-step[aria-selected='true'] {
+    border-color: rgb(var(--sakura-a) / 0.65);
+    background-color: rgb(var(--sakura-a) / 0.1);
+    box-shadow:
+      var(--glass-shadow),
+      0 0 40px -12px rgb(var(--sakura-a) / 0.6);
+  }
+  .timeline-node {
+    @apply relative mb-5 block h-3.5 w-3.5 rounded-full border border-fg/30 bg-bg;
     transition:
-      transform 0.4s theme('transitionTimingFunction.out-expo'),
-      border-color 0.3s ease;
+      background-color 0.4s ease,
+      border-color 0.4s ease,
+      box-shadow 0.4s ease,
+      transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  .btn-ghost:hover {
-    transform: translate3d(0, -2px, 0);
-    border-color: rgb(var(--sakura-a) / 0.5);
+  .timeline-step[data-state='done'] .timeline-node,
+  .timeline-step[data-state='active'] .timeline-node {
+    background-color: rgb(var(--sakura-a));
+    border-color: rgb(var(--sakura-a));
+    box-shadow: 0 0 16px 1px rgb(var(--sakura-a) / 0.8);
+  }
+  .timeline-step[data-state='active'] .timeline-node {
+    transform: scale(1.35);
+  }
+  /* Connector to the next step: vertical on mobile, horizontal on desktop. */
+  .timeline-connector {
+    position: absolute;
+    left: calc(1.94rem - 0.5px);
+    top: 2.4rem;
+    width: 1px;
+    height: calc(100% + 0.54rem);
+    background: rgb(var(--fg) / 0.14);
+    overflow: hidden;
+  }
+  .timeline-connector::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgb(var(--sakura-a)), rgb(var(--sakura-b)));
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .timeline-step[data-state='done'] .timeline-connector::after {
+    transform: scaleY(1);
+  }
+  @media (min-width: 1024px) {
+    .timeline-connector {
+      left: 2.4rem;
+      top: calc(1.94rem - 0.5px);
+      width: calc(100% + 0.54rem);
+      height: 1px;
+    }
+    .timeline-connector::after {
+      background: linear-gradient(to right, rgb(var(--sakura-a)), rgb(var(--sakura-b)));
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+    .timeline-step[data-state='done'] .timeline-connector::after {
+      transform: scaleX(1);
+    }
   }
 }
 
@@ -308,6 +528,26 @@
   }
 }
 
+/* A display utility (e.g. `grid`) must never defeat the hidden attribute. */
+[hidden] {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   Scroll reveal (see src/scripts/reveal.ts). Hidden only when JS is running.
+   -------------------------------------------------------------------------- */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition:
+    opacity 0.9s ease var(--reveal-delay, 0ms),
+    transform 1s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0ms);
+}
+.js [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
 /* --------------------------------------------------------------------------
    Reduced motion: keep layout, drop movement.
    -------------------------------------------------------------------------- */
@@ -319,5 +559,10 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
   }
 }

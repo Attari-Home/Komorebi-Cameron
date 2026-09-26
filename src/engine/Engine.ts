@@ -1,5 +1,5 @@
 import { BranchSystem } from './Branch';
-import { clamp, clamp01, damp, easeOutCubic } from './math';
+import { clamp, clamp01, damp, easeOutCubic, smoothstep } from './math';
 import { PetalPool } from './PetalPool';
 import { createSurface, getContext2D, PetalSpriteSet } from './PetalSprite';
 import {
@@ -10,6 +10,7 @@ import {
   type EngineOptions,
   type EngineStats,
   type EngineTheme,
+  type PetalColors,
   type ScrollSource,
   type SpriteSurface,
   type ThemePalette,
@@ -40,14 +41,17 @@ function resolveConfig(options: EngineOptions): EngineConfig {
 /**
  * Canvas engine orchestrator.
  *
- * Owns the render loop and composes three things each frame:
+ * The canvas is fixed to the viewport and lives behind the page content, so
+ * petals fall through the whole experience. Each frame composes:
  *
- *  1. A cached **branch layer** (offscreen surface). Completed branch
- *     segments are stamped into it once; every frame it is composited with a
- *     single `drawImage`.
- *  2. The **growth front**: the few segments currently mid-growth, drawn
- *     directly (plus blossoms while they bloom).
- *  3. The **petal pool**, drawn from pre-rendered sprites.
+ *  1. A cached **branch layer** (offscreen surface) containing the tree and
+ *     its blossoms. It is repainted while growing and then at a modest rate
+ *     (`layerRefreshMs`) to animate the wind sway; in between, it is just
+ *     one `drawImage`. It fades out as the page scrolls past the hero.
+ *  2. The **petal pool**, drawn from pre-rendered sprites.
+ *
+ * Petal colours come from a user-selectable palette; changing it (or the
+ * theme) re-rasterises every sprite and repaints the layer instantly.
  *
  * Scroll velocity is read per frame from a `ScrollSource` (no subscriptions,
  * no allocation) and coupled to petal motion and branch parallax.
@@ -63,6 +67,9 @@ export class Engine {
   private readonly sprites: PetalSpriteSet;
   private readonly pool: PetalPool;
   private readonly branches: BranchSystem;
+
+  private theme: EngineTheme;
+  private petalColors: PetalColors | null;
   private palette: ThemePalette;
 
   private dpr = 1;
@@ -80,9 +87,9 @@ export class Engine {
   private reducedMotion: boolean;
 
   private growElapsedMs = 0;
-  private bloomElapsedMs = 0;
-  private layerComplete = false;
-  private bloomsBaked = false;
+  private layerDirty = true;
+  private layerTime = -1;
+  private layerMsEma = 0;
 
   private scrollSource: ScrollSource | null = null;
   private smoothedVelocity = 0;
@@ -100,7 +107,10 @@ export class Engine {
     if (!ctx) throw new Error('[komorebi] Could not acquire a 2D canvas context.');
     this.ctx = ctx;
 
-    this.palette = THEME_PALETTES[this.config.theme];
+    this.theme = this.config.theme;
+    this.petalColors = this.config.petalColors;
+    this.palette = this.buildPalette();
+
     this.sprites = new PetalSpriteSet(this.config.petals);
     this.pool = new PetalPool(this.config.petals, this.config.seed);
     this.branches = new BranchSystem(this.config.branches, this.config.seed);
@@ -141,8 +151,8 @@ export class Engine {
 
   /**
    * Resize to a CSS-pixel viewport. Re-allocates the backing stores (DPR
-   * capped), regenerates the (deterministic) branch tree, and repaints the
-   * cached layer at the current growth progress so nothing restarts.
+   * capped) and regenerates the (deterministic) branch tree. Growth progress
+   * is preserved, so nothing restarts.
    */
   resize(cssWidth: number, cssHeight: number): void {
     if (this.destroyed) return;
@@ -151,8 +161,7 @@ export class Engine {
     const h = Math.max(1, Math.floor(cssHeight));
     const dpr = Math.min(window.devicePixelRatio || 1, this.config.maxDpr);
 
-    const sizeUnchanged = w === this.width && h === this.height;
-    if (sizeUnchanged && dpr === this.dpr) return;
+    if (w === this.width && h === this.height && dpr === this.dpr) return;
 
     const dprChanged = dpr !== this.dpr;
     this.width = w;
@@ -165,7 +174,6 @@ export class Engine {
     this.canvas.height = ph;
     this.layer.width = pw;
     this.layer.height = ph;
-    this.layerCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     if (dprChanged || this.sprites.variants.length === 0) {
       this.sprites.build(dpr, this.palette);
@@ -173,22 +181,27 @@ export class Engine {
 
     this.pool.resize(w, h, dpr);
     this.branches.generate(w, h);
-    this.redrawLayer();
+    this.layerDirty = true;
 
     this.syncLoop();
     if (!this.isRunning()) this.draw();
   }
 
-  /** Switch palette (dark/light). Re-rasterises sprites and the branch layer. */
-  setTheme(theme: EngineTheme): void {
+  /**
+   * Apply a theme and (optionally) a user petal palette in one pass. Every
+   * petal sprite and blossom is re-rasterised and the branch layer repainted,
+   * so the change is instant and costs a single rebuild.
+   */
+  setAppearance(theme: EngineTheme, colors?: PetalColors | null): void {
     if (this.destroyed) return;
-    const next = THEME_PALETTES[theme];
-    if (next === this.palette) return;
 
-    this.palette = next;
+    this.theme = theme;
+    if (colors !== undefined) this.petalColors = colors;
+    this.palette = this.buildPalette();
+
     if (this.width > 0) {
       this.sprites.build(this.dpr, this.palette);
-      this.redrawLayer();
+      this.layerDirty = true;
       if (!this.isRunning()) this.draw();
     }
   }
@@ -198,12 +211,12 @@ export class Engine {
     if (this.destroyed || enabled === this.reducedMotion) return;
     this.reducedMotion = enabled;
     if (enabled) this.finishIntro();
-    if (this.width > 0) this.redrawLayer();
+    this.layerDirty = true;
     this.syncLoop();
     if (!this.isRunning() && this.width > 0) this.draw();
   }
 
-  /** Pause the loop while the canvas is scrolled out of view. */
+  /** Pause the loop while the canvas is not visible. */
   setInViewport(visible: boolean): void {
     if (this.destroyed || visible === this.inViewport) return;
     this.inViewport = visible;
@@ -231,6 +244,24 @@ export class Engine {
       growthProgress: this.growthProgress(),
       smoothedVelocity: this.smoothedVelocity,
       running: this.isRunning(),
+      layerMs: this.layerMsEma,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Palette
+  // -------------------------------------------------------------------------
+
+  private buildPalette(): ThemePalette {
+    const base = THEME_PALETTES[this.theme];
+    const c = this.petalColors;
+    if (!c) return base;
+    return {
+      ...base,
+      petalA: c.petalA,
+      petalB: c.petalB,
+      petalTint: c.petalTint,
+      rim: c.rim,
     };
   }
 
@@ -283,7 +314,6 @@ export class Engine {
 
     if (this.lastTime === 0) {
       this.lastTime = now;
-      // Render the first frame with a nominal step.
       this.step(1 / 60, 1000 / 60);
       this.draw();
       return;
@@ -312,12 +342,7 @@ export class Engine {
   private step(dt: number, dtMs: number): void {
     this.time += dt;
 
-    // Growth, then bloom once the tree has fully extended.
-    if (this.growthProgress() < 1) {
-      this.growElapsedMs += dtMs;
-    } else if (this.bloomElapsedMs < this.config.bloomDurationMs) {
-      this.bloomElapsedMs += dtMs;
-    }
+    if (this.growthProgress() < 1) this.growElapsedMs += dtMs;
 
     // Scroll velocity: clamp, then damp so wheel ticks become smooth gusts.
     const cfg = this.config;
@@ -345,32 +370,41 @@ export class Engine {
     }
   }
 
-  /** Skip the intro entirely (reduced motion): tree grown, blooms open. */
+  /** Skip the intro entirely (reduced motion): tree fully grown and in bloom. */
   private finishIntro(): void {
     const cfg = this.config;
     this.growElapsedMs = cfg.introDelayMs + cfg.growDurationMs;
-    this.bloomElapsedMs = cfg.bloomDurationMs;
-    this.bloomsBaked = true;
   }
 
   // -------------------------------------------------------------------------
   // Rendering
   // -------------------------------------------------------------------------
 
-  /** Clear and repaint the cached branch layer at the current growth state. */
-  private redrawLayer(): void {
+  /** Repaint the cached branch layer (tree + blossoms) for the current state. */
+  private refreshLayer(front: number): void {
+    const t0 = performance.now();
     const lc = this.layerCtx;
-    lc.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    lc.clearRect(0, 0, this.width, this.height);
+    const dpr = this.dpr;
 
-    this.branches.resetCursor();
-    const front = this.branches.frontDistance(this.growthProgress());
-    this.branches.paintCompleted(lc, front, this.palette);
+    lc.setTransform(1, 0, 0, 1, 0, 0);
+    lc.globalAlpha = 1;
+    lc.clearRect(0, 0, this.layer.width, this.layer.height);
 
-    if (this.bloomsBaked) {
-      this.branches.paintBlooms(lc, this.sprites.blossom, 1);
-    }
-    this.layerComplete = this.branches.isComplete();
+    const swayOn = !this.reducedMotion;
+    const timeMs = swayOn ? this.time * 1000 : 0;
+
+    lc.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.branches.paint(lc, front, timeMs, swayOn, this.palette);
+    this.branches.paintBlossoms(lc, this.sprites.blossom, front, timeMs, dpr);
+
+    lc.setTransform(1, 0, 0, 1, 0, 0);
+    lc.globalAlpha = 1;
+
+    this.layerDirty = false;
+    this.layerTime = this.time;
+
+    const cost = performance.now() - t0;
+    this.layerMsEma = this.layerMsEma === 0 ? cost : this.layerMsEma * 0.9 + cost * 0.1;
   }
 
   private draw(): void {
@@ -378,51 +412,37 @@ export class Engine {
 
     const ctx = this.ctx;
     const dpr = this.dpr;
+    const cfg = this.config;
     const progress = this.growthProgress();
     const front = this.branches.frontDistance(progress);
 
-    // 1. Stamp newly completed segments into the cached layer.
-    if (!this.layerComplete) {
-      this.branches.paintCompleted(this.layerCtx, front, this.palette);
-      this.layerComplete = this.branches.isComplete();
-    }
-
-    // Branch parallax against page scroll.
     const scrollY = this.scrollSource ? Math.max(0, this.scrollSource().y) : 0;
-    const offsetY = -scrollY * this.config.parallax;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // 2. Composite the cached branch layer: a single drawImage.
-    ctx.globalAlpha = this.palette.branchAlpha;
-    ctx.drawImage(this.layer, 0, Math.round(offsetY * dpr));
-    ctx.globalAlpha = 1;
+    // 1. Branch layer: only while the hero is (partly) in view.
+    const fade =
+      1 - smoothstep(cfg.branchFadeStart * this.height, cfg.branchFadeEnd * this.height, scrollY);
 
-    // 3. Growth front + blossoms, drawn in CSS-pixel space with parallax.
-    ctx.setTransform(dpr, 0, 0, dpr, 0, offsetY * dpr);
-    if (!this.layerComplete) {
-      ctx.globalAlpha = this.palette.branchAlpha;
-      this.branches.paintGrowingFront(ctx, front, this.palette);
+    if (fade > 0.01) {
+      const animating = progress < 1;
+      const due = this.time - this.layerTime >= cfg.layerRefreshMs / 1000;
+      if (this.layerDirty || animating || (due && !this.reducedMotion)) {
+        this.refreshLayer(front);
+      }
+
+      // Slight parallax: the tree drifts up slower than the page content.
+      const offsetY = Math.round(-scrollY * cfg.parallax * dpr);
+      ctx.globalAlpha = this.palette.branchAlpha * fade;
+      ctx.drawImage(this.layer, 0, offsetY);
       ctx.globalAlpha = 1;
     }
 
-    if (this.layerComplete && !this.bloomsBaked) {
-      const bloomT = clamp01(this.bloomElapsedMs / this.config.bloomDurationMs);
-      this.branches.paintBlooms(ctx, this.sprites.blossom, bloomT);
-
-      if (bloomT >= 1) {
-        // Bake the finished blossoms into the layer so they cost nothing more.
-        this.branches.paintBlooms(this.layerCtx, this.sprites.blossom, 1);
-        this.bloomsBaked = true;
-      }
-    }
-
-    // 4. Petals, fading in as the branches near completion.
-    const petalAlpha = this.reducedMotion ? 1 : easeOutCubic(clamp01((progress - 0.3) / 0.6));
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.pool.draw(ctx, this.sprites, dpr, petalAlpha);
+    // 2. Petals, fading in as the branches near completion.
+    const intro = this.reducedMotion ? 1 : easeOutCubic(clamp01((progress - 0.3) / 0.6));
+    this.pool.draw(ctx, this.sprites, dpr, intro * cfg.petalOpacity);
 
     ctx.globalAlpha = 1;
     ctx.setTransform(1, 0, 0, 1, 0, 0);

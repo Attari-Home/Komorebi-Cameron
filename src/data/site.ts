@@ -1,6 +1,6 @@
 /**
- * Single source of truth for site-wide metadata.
- * Update `url`, `email` and `sameAs` once the production details are final.
+ * Single source of truth for site-wide metadata and marketing copy config.
+ * Update `url`, `contact` and `sameAs` once the production details are final.
  */
 export const SITE = {
   name: 'Komorebi Cameron',
@@ -16,21 +16,66 @@ export const SITE = {
   ogImageAlt: 'Komorebi Cameron — Crafting Unforgettable Digital Experiences',
   /** Public profile URLs. Leave empty until real profiles exist. */
   sameAs: [] as string[],
+
+  /** Placeholder contact details. Replace before launch. */
+  contact: {
+    email: 'hello@komorebicameron.com',
+    /**
+     * Optional form backend (e.g. a Formspree / Basin / custom endpoint that
+     * accepts a JSON POST). When empty, the contact form opens the visitor's
+     * email client with the message pre-filled instead.
+     */
+    formEndpoint: '',
+    responseTime: 'within one business day',
+  },
+
+  nav: [
+    { label: 'Manifesto', href: '#manifesto' },
+    { label: 'Services', href: '#services' },
+    { label: 'Process', href: '#process' },
+    { label: 'Impact', href: '#impact' },
+    { label: 'Contact', href: '#contact' },
+  ],
+
   services: [
     {
-      name: 'Bespoke Web Development',
+      id: 'web',
+      index: '01',
+      name: 'Bespoke Web Engineering',
+      kicker: 'Design-led builds',
       description:
-        'Hand-built, design-led websites and web applications engineered for speed, accessibility, and longevity.',
+        'Hand-built websites and web applications, engineered from a blank file to be fast, accessible, and unmistakably yours. No templates, no page-builder bloat.',
+      features: [
+        'Astro, React and TypeScript architecture',
+        'Design systems with dark and light themes',
+        'Accessible by default, WCAG 2.2 AA',
+      ],
     },
     {
-      name: 'Creative Engineering & Canvas Graphics',
+      id: 'canvas',
+      index: '02',
+      name: 'Creative WebGL & Canvas Graphics',
+      kicker: 'Motion you can feel',
       description:
-        'Custom WebGL and HTML5 canvas experiences, generative visuals, and scroll-driven motion systems.',
+        'Generative visuals, particle systems, and scroll-driven storytelling that turn a page into an experience, tuned to hold 60fps on real devices.',
+      features: [
+        'Custom HTML5 canvas and WebGL engines',
+        'Scroll physics and micro-interactions',
+        'Graceful reduced-motion fallbacks',
+      ],
     },
     {
+      id: 'performance',
+      index: '03',
       name: 'Performance & SEO Architecture',
+      kicker: 'Fast, findable, durable',
       description:
-        'Static-first architecture, Core Web Vitals engineering, and structured data for measurable search visibility.',
+        'Static-first delivery, Core Web Vitals engineering, and structured data, so the site you launch is the one search engines and visitors reward.',
+      features: [
+        'Near-zero-JS initial payloads',
+        'Schema.org structured data and rich results',
+        'Lighthouse and Core Web Vitals budgets',
+      ],
     },
   ],
 } as const;

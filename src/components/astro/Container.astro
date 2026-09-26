@@ -1,0 +1,17 @@
+---
+/**
+ * Page content column. The `data-safe-column` marker is what the Guide Petal
+ * measures to find the gutters it may travel in, so every block of text or
+ * cards should live inside a Container.
+ */
+interface Props {
+  class?: string;
+  as?: 'div' | 'header' | 'footer';
+}
+
+const { class: className = '', as: Tag = 'div' } = Astro.props;
+---
+
+<Tag data-safe-column class:list={['mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12', className]}>
+  <slot />
+</Tag>

@@ -192,6 +192,18 @@ export interface BranchConfig {
   /** Blossom display width in px at scale 1. */
   blossomSize: number;
   maxBlossoms: number;
+  /** Peak wind sway displacement in px (before viewport scaling). */
+  swayAmplitude: number;
+  /** Sway angular speed in radians per millisecond (0.0006 = ~10.5s period). */
+  swayFrequency: number;
+  /** Phase lag per px travelled along a branch: makes the sway a travelling wave. */
+  swayWave: number;
+  /** Blossoms per cluster at a branch node: [min, max]. */
+  clusterSize: readonly [number, number];
+  /** Cluster spread radius in px at scale 1, in units of blossom size. */
+  clusterRadius: number;
+  /** Probability that an interior fork node also grows a blossom cluster. */
+  nodeBlossomChance: number;
 }
 
 /**
@@ -209,6 +221,8 @@ export interface BranchSegment {
   d0: number;
   d1: number;
   depth: number;
+  /** Index of the root branch this segment belongs to (drives sway phase). */
+  root: number;
 }
 
 export interface BlossomTip {
@@ -218,6 +232,9 @@ export interface BlossomTip {
   /** Display width in CSS px. */
   size: number;
   depth: number;
+  /** Root branch index and distance along the tree: sway is a function of both. */
+  root: number;
+  d: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -234,6 +251,14 @@ export interface ThemePalette {
   rimAlpha: number;
   /** Overall opacity of the branch layer when composited. */
   branchAlpha: number;
+}
+
+/** The four colours that a user-selectable petal palette controls. */
+export interface PetalColors {
+  petalA: string;
+  petalB: string;
+  petalTint: string;
+  rim: string;
 }
 
 export const THEME_PALETTES: Record<EngineTheme, ThemePalette> = {
@@ -278,8 +303,17 @@ export interface EngineConfig {
   /** Largest simulated time step; longer gaps (tab switches) are clamped. */
   maxDeltaMs: number;
   introDelayMs: number;
+  /** Time for the growth front (and trailing blossoms) to sweep the whole tree. */
   growDurationMs: number;
-  bloomDurationMs: number;
+  /** Minimum ms between branch-layer repaints once growth has finished (sway rate). */
+  layerRefreshMs: number;
+  /** Branches fade out between these scroll depths (fractions of viewport height). */
+  branchFadeStart: number;
+  branchFadeEnd: number;
+  /** Global multiplier on petal opacity. */
+  petalOpacity: number;
+  /** Optional user palette; null uses the theme's built-in petal colours. */
+  petalColors: PetalColors | null;
   /** Branch layer parallax against page scroll (fraction of scrollY). */
   parallax: number;
   /** Damping rate (1/s) for scroll velocity smoothing. */
@@ -300,6 +334,8 @@ export interface EngineStats {
   growthProgress: number;
   smoothedVelocity: number;
   running: boolean;
+  /** Smoothed cost of one branch-layer repaint, in ms. */
+  layerMs: number;
 }
 
 export const DEFAULT_ENGINE_CONFIG: EngineConfig = {
@@ -309,8 +345,12 @@ export const DEFAULT_ENGINE_CONFIG: EngineConfig = {
   maxDpr: 2,
   maxDeltaMs: 50,
   introDelayMs: 250,
-  growDurationMs: 3600,
-  bloomDurationMs: 1500,
+  growDurationMs: 4200,
+  layerRefreshMs: 40,
+  branchFadeStart: 0.25,
+  branchFadeEnd: 0.95,
+  petalOpacity: 0.9,
+  petalColors: null,
   parallax: 0.18,
   velocitySmoothing: 7,
   velocityClamp: 4000,
@@ -320,9 +360,9 @@ export const DEFAULT_ENGINE_CONFIG: EngineConfig = {
     sampleFrames: 90,
   },
   petals: {
-    minCount: 30,
-    maxCount: 60,
-    areaPerPetal: 24000,
+    minCount: 60,
+    maxCount: 120,
+    areaPerPetal: 12000,
     variantCount: 6,
     spriteWidth: 44,
     spriteHeight: 52,
@@ -350,6 +390,8 @@ export const DEFAULT_ENGINE_CONFIG: EngineConfig = {
       { x: -0.04, y: 1.04, angle: 335, length: 0.5, width: 12 },
       { x: -0.03, y: 0.1, angle: 22, length: 0.3, width: 8 },
       { x: 1.04, y: 0.66, angle: 196, length: 0.34, width: 8 },
+      { x: 0.54, y: -0.05, angle: 104, length: 0.2, width: 7 },
+      { x: 1.04, y: 1.04, angle: 214, length: 0.36, width: 10 },
     ],
     stepLength: 9,
     noiseScale: 0.0042,
@@ -364,8 +406,14 @@ export const DEFAULT_ENGINE_CONFIG: EngineConfig = {
     childWidthFactor: 0.68,
     taperExponent: 1.4,
     minWidth: 0.7,
-    maxSegments: 2400,
-    blossomSize: 30,
-    maxBlossoms: 44,
+    maxSegments: 3200,
+    blossomSize: 28,
+    maxBlossoms: 120,
+    swayAmplitude: 9,
+    swayFrequency: 0.0006,
+    swayWave: 0.0035,
+    clusterSize: [2, 4],
+    clusterRadius: 0.62,
+    nodeBlossomChance: 0.45,
   },
 };

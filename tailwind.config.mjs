@@ -33,7 +33,14 @@ export default {
       },
 
       fontFamily: {
-        display: ['"Cormorant Garamond"', 'Georgia', ...defaultTheme.fontFamily.serif],
+        display: [
+          '"Cormorant Garamond"',
+          '"Cormorant"',
+          '"EB Garamond"',
+          'Georgia',
+          '"Times New Roman"',
+          ...defaultTheme.fontFamily.serif,
+        ],
         sans: [
           '"Plus Jakarta Sans Variable"',
           '"Plus Jakarta Sans"',
@@ -43,7 +50,7 @@ export default {
 
       fontSize: {
         // Fluid hero scale.
-        'display-xl': ['clamp(3rem, 9vw, 9rem)', { lineHeight: '0.95', letterSpacing: '-0.03em' }],
+        'display-xl': ['clamp(3.5rem, 9vw, 8.5rem)', { lineHeight: '0.95', letterSpacing: '-0.03em' }],
         'display-lg': ['clamp(2.25rem, 6vw, 5.5rem)', { lineHeight: '1', letterSpacing: '-0.025em' }],
         'display-md': ['clamp(1.75rem, 3.5vw, 3rem)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
       },

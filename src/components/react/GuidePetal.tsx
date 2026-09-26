@@ -8,6 +8,8 @@ import { getCurrentTheme, onThemeChange, type Theme } from '../../lib/theme';
 const TRAIL_CAPACITY = 260;
 /** Minimum travel (px) between trail samples. */
 const TRAIL_SPACING = 2;
+/** Scroll progress at which the petal changes sides (right -> left -> right). */
+const SWITCH_POINTS = [0.36, 0.72] as const;
 /** Peak thread width in CSS px (kept ultra-thin on purpose). */
 const THREAD_WIDTH = 1.7;
 
@@ -19,11 +21,12 @@ const THREAD_WIDTH = 1.7;
  * ----------
  *  - Vertical: the petal drifts from ~14% to ~86% of the viewport height as
  *    document scroll progress goes 0 -> 1.
- *  - Horizontal: a sine wave across the WHOLE viewport width,
- *    `x = vw/2 + sin(progress * 8π) * vw * 0.4`, over scroll progress 0 -> 1.
- *  - Physics: a soft spring (lag + overshoot), drag, wind gusts proportional to
- *    scroll velocity, and angular inertia so the petal tumbles organically.
- *    It is clamped inside the viewport at all times.
+ *  - Horizontal: a gentle sine weave inside the gutter beside the content
+ *    column (`[data-safe-column]`), so it never passes between text. Twice per
+ *    page (SWITCH_POINTS) it fades out, reappears in the opposite gutter and
+ *    continues there.
+ *  - Physics: soft spring lag, drag, scroll-velocity wind gusts, angular
+ *    inertia tumble. Hard-clamped inside its lane.
  *
  * Everything runs in one rAF loop reading `scrollBus.state` and writing
  * straight to DOM styles / a canvas: no React state, no re-renders.
@@ -74,19 +77,63 @@ export default function GuidePetal() {
     let amplitude = 0;
     let usable = true;
     let dpr = 1;
+    /** Gutter lanes outside the content column: 0 = left, 1 = right. */
+    const lanes = [
+      { center: 0, amp: 0, size: 30, gutter: 0 },
+      { center: 0, amp: 0, size: 30, gutter: 0 },
+    ];
+    let bothSides = true;
+    let curSide = 1; // start on the right
+    let switching = false;
+
+    const applyLane = (side: number) => {
+      const l = lanes[side]!;
+      size = l.size;
+      laneCenter = l.center;
+      amplitude = l.amp;
+      petal.style.width = `${size}px`;
+      petal.style.height = `${size * 1.2}px`;
+    };
 
     const measure = () => {
       vw = document.documentElement.clientWidth;
       vh = window.innerHeight;
 
-      // Full-viewport sweep: no gutters, the petal owns the whole screen width.
-      usable = true;
-      size = clamp(vw * 0.115, 34, 46);
-      laneCenter = vw / 2;
-      amplitude = Math.max(0, vw * 0.4);
+      let left = Infinity;
+      let right = -Infinity;
+      document.querySelectorAll<HTMLElement>('[data-safe-column]').forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        left = Math.min(left, rect.left + (parseFloat(cs.paddingLeft) || 0));
+        right = Math.max(right, rect.right - (parseFloat(cs.paddingRight) || 0));
+      });
+      if (!Number.isFinite(left) || !Number.isFinite(right)) {
+        left = vw * 0.1;
+        right = vw * 0.9;
+      }
 
-      petal.style.width = `${size}px`;
-      petal.style.height = `${size * 1.2}px`;
+      const buffer = 6;
+      const leftW = Math.max(0, left - buffer);
+      const rightStart = right + buffer;
+      const rightW = Math.max(0, vw - rightStart);
+      const build = (i: number, gutter: number, start: number) => {
+        const sz = clamp(gutter * 0.7, 10, 40);
+        lanes[i] = {
+          center: start + gutter / 2,
+          amp: Math.max(0, gutter / 2 - sz / 2 - 1),
+          size: sz,
+          gutter,
+        };
+      };
+      build(0, leftW, 0);
+      build(1, rightW, rightStart);
+
+      // Only switch sides when both gutters are roomy enough; otherwise stay
+      // on the wider one.
+      bothSides = leftW >= 26 && rightW >= 26;
+      if (!bothSides) curSide = rightW >= leftW ? 1 : 0;
+      usable = Math.max(leftW, rightW) >= 9;
+      applyLane(curSide);
 
       // Trail canvas matches the viewport, at a capped density.
       dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -123,11 +170,20 @@ export default function GuidePetal() {
 
       const bus = scrollBus.state;
       const p = clamp01(bus.progress);
-      // One continuous sine wave for the whole page: 0 -> 1 scroll = 5 full weaves.
-      const phase = p * Math.PI * 8;
+      // Gentle side-to-side weave inside the current gutter lane.
+      const phase = p * Math.PI * 6;
 
-      // ---- Target on the spiral, inside the lane ---------------------------
-      const idleSway = Math.sin(time * 0.7) * amplitude * 0.03;
+      // Side schedule: starts on the right, crosses over twice.
+      const wantSide = !bothSides
+        ? curSide
+        : p < SWITCH_POINTS[0]
+          ? 1
+          : p < SWITCH_POINTS[1]
+            ? 0
+            : 1;
+      if (wantSide !== curSide) switching = true;
+
+      const idleSway = Math.sin(time * 0.7) * amplitude * 0.12;
       const targetX = clamp(
         laneCenter + Math.sin(phase) * amplitude + idleSway,
         laneCenter - amplitude,
@@ -148,12 +204,13 @@ export default function GuidePetal() {
       // fast scrolling adds a wind gust that pushes it sideways.
       const k = 11;
       const c = 2 * Math.sqrt(k) * 0.62;
-      const gust = clamp(bus.velocity * 0.05, -140, 140) * Math.sin(time * 1.3 + phase);
+      const gust = clamp(bus.velocity * 0.02, -60, 60) * Math.sin(time * 1.3 + phase);
       s.vx += (k * (targetX - s.x) - c * s.vx + gust) * dt;
       s.vy += (k * (targetY - s.y) - c * s.vy - clamp(bus.velocity, -3000, 3000) * 0.02) * dt;
       s.x += s.vx * dt;
       s.y += s.vy * dt;
-      s.x = clamp(s.x, size * 0.5, vw - size * 0.5);
+      // Hard guarantee: never leave the lane, whatever the spring does.
+      s.x = clamp(s.x, laneCenter - amplitude, laneCenter + amplitude);
       s.y = clamp(s.y, size * 0.5, vh - size * 0.5);
 
       // ---- Orientation: angular inertia driven by velocity (rot += vel * 0.05) ---
@@ -169,8 +226,20 @@ export default function GuidePetal() {
       // ---- Visibility: intro fade-in, fade out near the footer -------------
       const intro = smoothstep(2.4, 3.8, time);
       const outro = 1 - smoothstep(0.93, 0.995, p);
-      const target = usable ? intro * outro : 0;
-      s.opacity = damp(s.opacity, target, 6, dt);
+      const target = usable && !switching ? intro * outro : 0;
+      s.opacity = damp(s.opacity, target, switching ? 9 : 6, dt);
+
+      // Side change: fade out beside the text, reappear in the other gutter
+      // (never flying across the content), thread reset.
+      if (switching && s.opacity < 0.04) {
+        curSide = wantSide;
+        applyLane(curSide);
+        s.x = laneCenter;
+        s.vx = 0;
+        s.av = 0;
+        trailCount = 0;
+        switching = false;
+      }
 
       petal.style.opacity = s.opacity.toFixed(3);
       petal.style.transform = `translate3d(${(s.x - size / 2).toFixed(2)}px, ${(s.y - size * 0.6).toFixed(2)}px, 0) rotate(${s.rot.toFixed(3)}rad) scale(${squash.toFixed(3)}, 1)`;

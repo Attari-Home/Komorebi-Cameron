@@ -1,0 +1,183 @@
+---
+/**
+ * Layout.astro — document shell.
+ *
+ * Responsibilities:
+ *  - <head>: charset, viewport, SEO + Open Graph + Twitter tags, canonical
+ *  - Self-hosted font loading with preloads for the two above-the-fold files
+ *  - Schema.org ProfessionalService JSON-LD
+ *  - Blocking inline script that applies the theme BEFORE first paint (no FOUC)
+ */
+import '@fontsource-variable/plus-jakarta-sans/wght.css';
+import '@fontsource/cormorant-garamond/latin-500-italic.css';
+import '../styles/global.css';
+
+import jakartaFont from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url';
+import cormorantItalicFont from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-500-italic.woff2?url';
+
+import { SITE } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Path portion only, e.g. "/" or "/about". Resolved against Astro.site. */
+  canonicalPath?: string;
+  ogImage?: string;
+  ogImageAlt?: string;
+  noindex?: boolean;
+}
+
+const {
+  title = SITE.title,
+  description = SITE.description,
+  canonicalPath = Astro.url.pathname,
+  ogImage = SITE.ogImage,
+  ogImageAlt = SITE.ogImageAlt,
+  noindex = false,
+} = Astro.props;
+
+const siteOrigin = (Astro.site ?? new URL(SITE.url)).toString();
+const canonicalUrl = new URL(canonicalPath, siteOrigin).toString();
+const ogImageUrl = new URL(ogImage, siteOrigin).toString();
+
+// ---- Schema.org: ProfessionalService ------------------------------------
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfessionalService',
+  '@id': `${SITE.url}/#organization`,
+  name: SITE.name,
+  legalName: SITE.legalName,
+  url: SITE.url,
+  description: SITE.description,
+  slogan: 'Crafting Unforgettable Digital Experiences',
+  image: ogImageUrl,
+  logo: new URL('/favicon.svg', siteOrigin).toString(),
+  areaServed: 'Worldwide',
+  knowsAbout: [
+    'Web development',
+    'Creative engineering',
+    'HTML5 canvas graphics',
+    'Search engine optimization',
+    'Web performance',
+  ],
+  serviceType: SITE.services.map((s) => s.name),
+  hasOfferCatalog: {
+    '@type': 'OfferCatalog',
+    name: `${SITE.name} Services`,
+    itemListElement: SITE.services.map((s) => ({
+      '@type': 'Offer',
+      itemOffered: {
+        '@type': 'Service',
+        name: s.name,
+        description: s.description,
+      },
+    })),
+  },
+  ...(SITE.sameAs.length > 0 ? { sameAs: SITE.sameAs } : {}),
+};
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark" style="color-scheme: dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!--
+      Blocking theme script. Runs before first paint so the correct theme is on
+      <html> before any CSS is applied — this is what prevents the dark/light
+      flash on reload. Keep storage key + attribute in sync with src/lib/theme.ts.
+    -->
+    <script is:inline>
+      (function () {
+        var KEY = 'kc-theme';
+        var theme = 'dark';
+        try {
+          var stored = window.localStorage.getItem(KEY);
+          if (stored === 'dark' || stored === 'light') {
+            theme = stored;
+          } else if (
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: light)').matches
+          ) {
+            theme = 'light';
+          }
+        } catch (e) {
+          if (
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: light)').matches
+          ) {
+            theme = 'light';
+          }
+        }
+        var root = document.documentElement;
+        root.setAttribute('data-theme', theme);
+        root.style.colorScheme = theme;
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', theme === 'light' ? '#FAF7F8' : '#0A0A0C');
+      })();
+    </script>
+
+    <!-- Primary SEO -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={SITE.name} />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content={SITE.themeColor} />
+    <meta name="color-scheme" content="dark light" />
+    <meta
+      name="robots"
+      content={noindex
+        ? 'noindex, nofollow'
+        : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'}
+    />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:locale" content={SITE.locale} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={ogImageAlt} />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
+
+    <!-- Font preloads: only the two files needed above the fold -->
+    <link rel="preload" href={jakartaFont} as="font" type="font/woff2" crossorigin />
+    <link
+      rel="preload"
+      href={cormorantItalicFont}
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Structured data -->
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+  </head>
+
+  <body class="bg-bg font-sans text-fg antialiased">
+    <a
+      href="#main"
+      class="sr-only-focusable fixed left-4 top-4 z-[100] rounded-full bg-sakura-a px-5 py-2.5 text-sm font-semibold text-obsidian"
+    >
+      Skip to content
+    </a>
+
+    <slot />
+  </body>
+</html>

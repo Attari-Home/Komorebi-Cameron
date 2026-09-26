@@ -1,0 +1,80 @@
+---
+/**
+ * Hero.astro — static, SEO-visible hero shell.
+ *
+ * Everything here is server-rendered HTML with zero JavaScript. The interactive
+ * canvas (branches + petals) mounts into #hero-canvas-root in Phase 3, and the
+ * Guide Petal in Phase 5. The headline is intentionally NOT animated so it
+ * paints immediately and counts as the Largest Contentful Paint.
+ */
+import { SITE } from '../../data/site';
+---
+
+<section
+  id="hero"
+  aria-labelledby="hero-heading"
+  class="relative isolate flex min-h-[100svh] items-center overflow-hidden"
+  data-hero
+>
+  <!-- Canvas mount point (Phase 3). Decorative only, hidden from assistive tech. -->
+  <div
+    id="hero-canvas-root"
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 -z-10"
+  >
+  </div>
+
+  <!-- Ambient glow behind the headline. Pure CSS. -->
+  <div
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 -z-20 bg-radial-glow"
+  >
+  </div>
+
+  <div class="mx-auto w-full max-w-7xl px-5 pb-24 pt-32 sm:px-8 lg:px-12">
+    <p
+      class="mb-8 inline-flex animate-fade-rise items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted"
+    >
+      <span
+        aria-hidden="true"
+        class="h-px w-10 bg-sakura-gradient"></span>
+      {SITE.tagline}
+    </p>
+
+    <h1
+      id="hero-heading"
+      class="text-balance font-sans text-display-xl font-semibold text-fg"
+    >
+      Crafting
+      <em
+        class="accent-serif text-sakura-gradient inline-block pb-[0.12em] pr-[0.08em] font-medium"
+        >Unforgettable</em
+      >
+      Digital Experiences.
+    </h1>
+
+    <p
+      class="mt-10 max-w-2xl animate-fade-rise text-pretty text-lg leading-relaxed text-fg-muted [animation-delay:150ms] sm:text-xl"
+    >
+      {SITE.name} is a luxury studio for bespoke web development, creative
+      canvas engineering, and performance-first architecture — built to be felt
+      as much as seen.
+    </p>
+
+    <div
+      class="mt-12 flex animate-fade-rise flex-wrap items-center gap-4 [animation-delay:300ms]"
+    >
+      <a href="#services" class="btn-sakura">Explore our craft</a>
+      <a href="#contact" class="btn-ghost">Start a project</a>
+    </div>
+  </div>
+
+  <!-- Scroll cue -->
+  <div
+    aria-hidden="true"
+    class="absolute bottom-8 left-1/2 hidden -translate-x-1/2 animate-fade-rise flex-col items-center gap-3 text-[0.65rem] uppercase tracking-[0.3em] text-fg-muted [animation-delay:600ms] sm:flex"
+  >
+    <span>Scroll</span>
+    <span class="h-10 w-px bg-gradient-to-b from-sakura-a to-transparent"></span>
+  </div>
+</section>

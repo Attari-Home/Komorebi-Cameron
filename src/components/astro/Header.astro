@@ -1,0 +1,62 @@
+---
+import ThemeToggle from '../react/ThemeToggle';
+import { SITE } from '../../data/site';
+---
+
+<header class="pointer-events-none fixed inset-x-0 top-0 z-50">
+  <div
+    class="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-12"
+  >
+    <a
+      href="/"
+      class="pointer-events-auto glass-pill group inline-flex items-center gap-2.5 py-2.5 pl-3.5 pr-5"
+      aria-label={`${SITE.name} — home`}
+    >
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 64 64"
+        aria-hidden="true"
+        focusable="false"
+        class="transition-transform duration-700 ease-out-expo group-hover:rotate-[28deg]"
+      >
+        <defs>
+          <linearGradient id="hdr-petal" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#FF70A6"></stop>
+            <stop offset="1" stop-color="#FFB7C5"></stop>
+          </linearGradient>
+        </defs>
+        <path
+          d="M32 6c10 9 15 19 11 30-2 7-7 11-11 19-4-8-9-12-11-19-4-11 1-21 11-30z"
+          fill="url(#hdr-petal)"
+        ></path>
+      </svg>
+      <span class="text-sm font-semibold tracking-wide">
+        Komorebi <span class="accent-serif text-base">Cameron</span>
+      </span>
+    </a>
+
+    <nav aria-label="Primary" class="pointer-events-auto flex items-center gap-3">
+      <a
+        href="#services"
+        class="hidden rounded-full px-4 py-2 text-sm font-medium text-fg-muted transition-colors hover:text-fg sm:inline-block"
+      >
+        Services
+      </a>
+      <a
+        href="#contact"
+        class="hidden rounded-full px-4 py-2 text-sm font-medium text-fg-muted transition-colors hover:text-fg sm:inline-block"
+      >
+        Contact
+      </a>
+
+      <ThemeToggle client:only="react">
+        <!-- Reserves the exact footprint of the toggle to avoid layout shift. -->
+        <span
+          slot="fallback"
+          class="glass-pill block h-11 w-11"
+          aria-hidden="true"></span>
+      </ThemeToggle>
+    </nav>
+  </div>
+</header>

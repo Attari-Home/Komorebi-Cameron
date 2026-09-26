@@ -1,0 +1,323 @@
+/* ==========================================================================
+   Komorebi Cameron — Global Styles
+   Layer order: tailwind base -> tokens/base -> components -> utilities
+   ========================================================================== */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --------------------------------------------------------------------------
+   Registered custom property so the neon border sweep can be animated.
+   -------------------------------------------------------------------------- */
+@property --sweep-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* --------------------------------------------------------------------------
+   Design tokens
+   Values are space-separated RGB channels so Tailwind alpha modifiers work:
+   rgb(var(--bg) / 0.8)
+   -------------------------------------------------------------------------- */
+@layer base {
+  :root,
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --bg: 10 10 12; /* #0A0A0C Deep Obsidian */
+    --fg: 249 249 251; /* #F9F9FB Cream */
+    --fg-muted: 178 176 186;
+    --surface: 255 255 255; /* used with low alpha for glass fills */
+    --surface-alpha: 0.04;
+    --surface-alpha-hover: 0.07;
+    --line: 255 255 255;
+    --line-alpha: 0.09;
+    --sakura-a: 255 112 166; /* #FF70A6 */
+    --sakura-b: 255 183 197; /* #FFB7C5 */
+    --glass-shadow: 0 8px 32px -8px rgb(0 0 0 / 0.45),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+    --selection-bg: 255 112 166;
+    --selection-fg: 10 10 12;
+  }
+
+  :root[data-theme='light'] {
+    color-scheme: light;
+
+    --bg: 250 247 248; /* #FAF7F8 Cherry Blossom */
+    --fg: 26 20 24;
+    --fg-muted: 104 92 99;
+    --surface: 255 255 255;
+    --surface-alpha: 0.62;
+    --surface-alpha-hover: 0.85;
+    --line: 26 20 24;
+    --line-alpha: 0.09;
+    /* Darkened sakura pair keeps AA contrast on the blossom background. */
+    --sakura-a: 226 58 121;
+    --sakura-b: 245 143 168;
+    --glass-shadow: 0 8px 32px -12px rgb(120 60 85 / 0.22),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.9);
+    --selection-bg: 255 112 166;
+    --selection-fg: 26 20 24;
+  }
+
+  html {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    font-family: theme('fontFamily.sans');
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: auto; /* Lenis owns smooth scrolling (Phase 4). */
+    overflow-x: clip;
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    overflow-x: clip;
+  }
+
+  /* Smooth colour handoff on theme change, but never on first paint. */
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition:
+      background-color 0.45s ease,
+      color 0.45s ease,
+      border-color 0.45s ease,
+      fill 0.45s ease,
+      stroke 0.45s ease,
+      box-shadow 0.45s ease !important;
+  }
+
+  ::selection {
+    background-color: rgb(var(--selection-bg) / 0.85);
+    color: rgb(var(--selection-fg));
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--sakura-a));
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  /* Slim, themed scrollbar. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--sakura-a) / 0.45) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--sakura-a) / 0.4);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Components: glassmorphism + neon borders
+   -------------------------------------------------------------------------- */
+@layer components {
+  /* Base frosted-glass surface. */
+  .glass {
+    background-color: rgb(var(--surface) / var(--surface-alpha));
+    border: 1px solid rgb(var(--line) / var(--line-alpha));
+    box-shadow: var(--glass-shadow);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(140%);
+  }
+
+  .glass-strong {
+    background-color: rgb(var(--surface) / calc(var(--surface-alpha) * 2));
+    border: 1px solid rgb(var(--line) / calc(var(--line-alpha) * 1.5));
+    box-shadow: var(--glass-shadow);
+    -webkit-backdrop-filter: blur(32px) saturate(160%);
+    backdrop-filter: blur(32px) saturate(160%);
+  }
+
+  /* Pill-shaped glass control (header, toggle, chips). */
+  .glass-pill {
+    @apply glass rounded-full;
+  }
+
+  /* Interactive glass card with a glowing neon border on hover/focus.
+     The border is drawn with a masked gradient pseudo-element so the card
+     interior stays fully transparent (works with backdrop blur). */
+  .glass-card {
+    @apply glass relative isolate overflow-hidden rounded-3xl;
+    transition:
+      transform 0.5s theme('transitionTimingFunction.out-expo'),
+      background-color 0.4s ease,
+      box-shadow 0.4s ease;
+  }
+
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--sweep-angle),
+      rgb(var(--sakura-a) / 0) 0deg,
+      rgb(var(--sakura-a) / 0.95) 70deg,
+      rgb(var(--sakura-b) / 0.95) 140deg,
+      rgb(var(--sakura-a) / 0) 220deg,
+      rgb(var(--sakura-a) / 0) 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    opacity: 0;
+    transition: opacity 0.45s ease;
+    pointer-events: none;
+  }
+
+  .glass-card::after {
+    /* Soft internal glow that follows hover. */
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      80% 60% at 50% 0%,
+      rgb(var(--sakura-a) / 0.14) 0%,
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.45s ease;
+    pointer-events: none;
+  }
+
+  .glass-card:hover,
+  .glass-card:focus-within {
+    transform: translate3d(0, -6px, 0);
+    background-color: rgb(var(--surface) / var(--surface-alpha-hover));
+    box-shadow:
+      var(--glass-shadow),
+      0 0 40px -10px rgb(var(--sakura-a) / 0.45);
+  }
+
+  .glass-card:hover::before,
+  .glass-card:focus-within::before {
+    opacity: 1;
+    animation: border-sweep 6s linear infinite;
+  }
+
+  .glass-card:hover::after,
+  .glass-card:focus-within::after {
+    opacity: 1;
+  }
+
+  /* Pink glowing gradient text for accent words. */
+  .text-sakura-gradient {
+    background-image: linear-gradient(
+      120deg,
+      rgb(var(--sakura-a)) 0%,
+      rgb(var(--sakura-b)) 50%,
+      rgb(var(--sakura-a)) 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    filter: drop-shadow(0 0 22px rgb(var(--sakura-a) / 0.45));
+    animation: gradient-shift 8s ease-in-out infinite;
+  }
+
+  /* Accent-word typography: Cormorant Garamond italic. */
+  .accent-serif {
+    font-family: theme('fontFamily.display');
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Primary call-to-action button. */
+  .btn-sakura {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold tracking-wide;
+    color: rgb(10 10 12);
+    background-image: linear-gradient(120deg, rgb(255 112 166), rgb(255 183 197));
+    box-shadow: 0 10px 30px -10px rgb(255 112 166 / 0.7);
+    transition:
+      transform 0.4s theme('transitionTimingFunction.out-expo'),
+      box-shadow 0.4s ease;
+  }
+  .btn-sakura:hover {
+    transform: translate3d(0, -2px, 0);
+    box-shadow: 0 16px 40px -10px rgb(255 112 166 / 0.85);
+  }
+
+  /* Ghost glass button. */
+  .btn-ghost {
+    @apply glass-pill inline-flex items-center justify-center gap-2 px-7 py-3.5 text-sm font-semibold tracking-wide;
+    transition:
+      transform 0.4s theme('transitionTimingFunction.out-expo'),
+      border-color 0.3s ease;
+  }
+  .btn-ghost:hover {
+    transform: translate3d(0, -2px, 0);
+    border-color: rgb(var(--sakura-a) / 0.5);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Utilities
+   -------------------------------------------------------------------------- */
+@layer utilities {
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .gpu {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion: keep layout, drop movement.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

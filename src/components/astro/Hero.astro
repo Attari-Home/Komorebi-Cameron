@@ -7,6 +7,7 @@
  * Guide Petal in Phase 5. The headline is intentionally NOT animated so it
  * paints immediately and counts as the Largest Contentful Paint.
  */
+import CanvasStage from '../react/CanvasStage';
 import { SITE } from '../../data/site';
 ---
 
@@ -22,6 +23,7 @@ import { SITE } from '../../data/site';
     aria-hidden="true"
     class="pointer-events-none absolute inset-0 -z-10"
   >
+    <CanvasStage client:only="react" />
   </div>
 
   <!-- Ambient glow behind the headline. Pure CSS. -->

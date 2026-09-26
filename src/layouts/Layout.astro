@@ -15,6 +15,7 @@ import '../styles/global.css';
 import jakartaFont from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url';
 import cormorantItalicFont from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-500-italic.woff2?url';
 
+import SmoothScrollProvider from '../components/react/SmoothScrollProvider';
 import { SITE } from '../data/site';
 
 interface Props {
@@ -177,6 +178,8 @@ const jsonLd = {
     >
       Skip to content
     </a>
+
+    <SmoothScrollProvider client:only="react" />
 
     <slot />
   </body>

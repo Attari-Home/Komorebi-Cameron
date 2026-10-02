@@ -3,14 +3,16 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
-  "description": "Komorebi Cameron \u2014 flagship web architecture and luxury creative engineering studio.",
+  "description": "Komorebi Cameron — flagship web architecture and luxury creative engineering studio.",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "check": "astro check"
+    "check": "astro check",
+    "format": "prettier --write \"src/**/*.{astro,ts,tsx,js,css,md,mdx}\"",
+    "lint": "prettier --check \"src/**/*.{astro,ts,tsx,js,css,md,mdx}\""
   },
   "dependencies": {
     "@astrojs/react": "^4.3.0",
@@ -28,6 +30,11 @@
     "@astrojs/check": "^0.9.4",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "prettier": "^3.9.9",
+    "prettier-plugin-astro": "^1.1.0",
     "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

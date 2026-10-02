@@ -4,7 +4,11 @@ import ContactForm from '../react/ContactForm';
 import { SITE } from '../../data/site';
 ---
 
-<section id="contact" aria-labelledby="contact-heading" class="relative scroll-mt-24 py-28 lg:py-44">
+<section
+  id="contact"
+  aria-labelledby="contact-heading"
+  class="relative scroll-mt-24 py-28 lg:py-44"
+>
   <Container>
     <div class="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-start lg:gap-x-16 xl:gap-x-24">
       <div class="min-w-0" data-reveal>
@@ -12,13 +16,20 @@ import { SITE } from '../../data/site';
           <span aria-hidden="true" class="h-px w-10 bg-sakura-gradient"></span>
           Contact
         </p>
-        <h2 id="contact-heading" class="i-text font-sans text-[clamp(2.25rem,1.35rem+3.4vw,4.25rem)] font-semibold leading-[1.08] tracking-tight [overflow-wrap:normal] [hyphens:none]">
+        <h2
+          id="contact-heading"
+          class="i-text font-sans text-[clamp(2.25rem,1.35rem+3.4vw,4.25rem)] font-semibold leading-[1.08] tracking-tight [overflow-wrap:normal] [hyphens:none]"
+        >
           Let's build something
-          <em class="accent-serif text-sakura-gradient mt-1 inline-block whitespace-nowrap pb-[0.12em] pr-[0.02em] text-[1.1em] leading-[1]">unforgettable</em>.
+          <em class="accent-serif text-sakura-gradient mt-1 inline-block whitespace-nowrap pb-[0.12em] pr-[0.02em] text-[1.1em] leading-[1]">
+            unforgettable
+          </em>
+          .
         </h2>
         <p class="i-text i-text-muted mt-8 max-w-md text-pretty text-lg leading-relaxed">
-          Tell us what you are dreaming up. We take on a small number of
-          projects at a time so each one gets our full attention.
+          Tell us what you are dreaming up, in writing. We work entirely by email and text, with no
+          calls and no meetings, and take on a small number of projects at a time so each one gets
+          our full attention.
         </p>
 
         <dl class="mt-12 space-y-6">
@@ -34,22 +45,31 @@ import { SITE } from '../../data/site';
             </dd>
           </div>
           <div>
-            <dt class="text-xs font-medium uppercase tracking-[0.24em] text-fg-muted">Response time</dt>
-            <dd class="i-text mt-2 text-lg text-fg">Usually {SITE.contact.responseTime}</dd>
+            <dt class="text-xs font-medium uppercase tracking-[0.24em] text-fg-muted">
+              Response time
+            </dt>
+            <dd class="i-text mt-2 text-lg text-fg">We respond {SITE.contact.responseTime}</dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-[0.24em] text-fg-muted">
+              How we work
+            </dt>
+            <dd class="i-text mt-2 text-lg text-fg">
+              100% async: email, Discord or text. No calls.
+            </dd>
           </div>
         </dl>
       </div>
 
       <div class="min-w-0" data-reveal style="--reveal-delay: 140ms">
         <ContactForm client:only="react">
-          <div
-            slot="fallback"
-            class="glass-strong rounded-3xl p-8 sm:p-10"
-            role="status"
-          >
+          <div slot="fallback" class="glass-strong rounded-3xl p-8 sm:p-10" role="status">
             <p class="text-fg-muted">
               Loading the form… or write to us directly at
-              <a class="font-semibold text-sakura-a" href={`mailto:${SITE.contact.email}`}>{SITE.contact.email}</a>.
+              <a class="font-semibold text-sakura-a" href={`mailto:${SITE.contact.email}`}>
+                {SITE.contact.email}
+              </a>
+              .
             </p>
           </div>
         </ContactForm>

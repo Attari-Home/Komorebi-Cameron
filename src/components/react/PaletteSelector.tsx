@@ -70,8 +70,10 @@ export default function PaletteSelector() {
   const onOptionKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     const last = PETAL_PALETTES.length - 1;
     let target = -1;
-    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') target = index === last ? 0 : index + 1;
-    if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') target = index === 0 ? last : index - 1;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight')
+      target = index === last ? 0 : index + 1;
+    if (event.key === 'ArrowUp' || event.key === 'ArrowLeft')
+      target = index === 0 ? last : index - 1;
     if (event.key === 'Home') target = 0;
     if (event.key === 'End') target = last;
     if (target >= 0) {
@@ -141,7 +143,9 @@ export default function PaletteSelector() {
                 />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-fg">{palette.label}</span>
-                  <span className="block truncate text-xs text-fg-muted">{palette.description}</span>
+                  <span className="block truncate text-xs text-fg-muted">
+                    {palette.description}
+                  </span>
                 </span>
                 {selected && (
                   <svg

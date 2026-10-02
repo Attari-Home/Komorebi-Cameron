@@ -1,0 +1,37 @@
+---
+import Container from './Container.astro';
+import CaseStudies from '../react/CaseStudies';
+---
+
+<section
+  id="portfolio"
+  aria-labelledby="portfolio-heading"
+  class="relative scroll-mt-24 py-28 lg:py-44"
+>
+  <Container>
+    <div class="max-w-3xl" data-reveal>
+      <p class="mb-8 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted">
+        <span aria-hidden="true" class="h-px w-10 bg-sakura-gradient"></span>
+        Portfolio
+      </p>
+      <h2
+        id="portfolio-heading"
+        class="i-text text-balance font-sans text-display-lg font-semibold"
+      >
+        Proof, measured in
+        <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] pr-[0.08em] text-[1.12em] leading-[0.9]">
+          milliseconds
+        </em>
+        .
+      </h2>
+      <p class="i-text i-text-muted mt-8 max-w-2xl text-pretty text-lg leading-relaxed sm:text-xl">
+        Our flagship build, open for inspection: the challenge, the technical approach, and the
+        numbers we held ourselves to.
+      </p>
+    </div>
+
+    <div class="mt-16 lg:mt-24" data-reveal style="--reveal-delay: 120ms">
+      <CaseStudies client:load />
+    </div>
+  </Container>
+</section>

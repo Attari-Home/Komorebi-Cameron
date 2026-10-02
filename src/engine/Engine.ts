@@ -38,6 +38,19 @@ function resolveConfig(options: EngineOptions): EngineConfig {
   };
 }
 
+/** Samples the wave edge: x in [0,1] -> y as a fraction of canvas height, or null when finished. */
+export type WipeEdge = () => ((x01: number) => number) | null;
+
+interface Look {
+  sprites: PetalSpriteSet;
+  layer: SpriteSurface;
+  layerCtx: Ctx2D;
+  palette: ThemePalette;
+  theme: EngineTheme;
+  layerDirty: boolean;
+  layerTime: number;
+}
+
 /**
  * Canvas engine orchestrator.
  *
@@ -64,7 +77,7 @@ export class Engine {
   private layer: SpriteSurface;
   private layerCtx: Ctx2D;
 
-  private readonly sprites: PetalSpriteSet;
+  private sprites: PetalSpriteSet;
   private readonly pool: PetalPool;
   private readonly branches: BranchSystem;
 
@@ -85,6 +98,10 @@ export class Engine {
   private documentHidden = false;
   private inViewport = true;
   private reducedMotion: boolean;
+
+  /** Previous appearance, kept alive while a theme wipe sweeps across the canvas. */
+  private oldLook: Look | null = null;
+  private wipeEdge: WipeEdge | null = null;
 
   private growElapsedMs = 0;
   private layerDirty = true;
@@ -176,6 +193,7 @@ export class Engine {
 
     if (w === this.width && h === this.height && dpr === this.dpr) return;
 
+    this.endWipe();
     const dprChanged = dpr !== this.dpr;
     this.width = w;
     this.height = h;
@@ -205,8 +223,28 @@ export class Engine {
    * petal sprite and blossom is re-rasterised and the branch layer repainted,
    * so the change is instant and costs a single rebuild.
    */
-  setAppearance(theme: EngineTheme, colors?: PetalColors | null): void {
+  setAppearance(theme: EngineTheme, colors?: PetalColors | null, wipe?: WipeEdge | null): void {
     if (this.destroyed) return;
+
+    const canWipe = !!wipe && this.width > 0 && !this.reducedMotion;
+    if (canWipe) {
+      // Hand the current look over to the old side of the wipe and build a
+      // fresh one; draw() composites both along the moving edge.
+      this.endWipe();
+      this.oldLook = {
+        sprites: this.sprites,
+        layer: this.layer,
+        layerCtx: this.layerCtx,
+        palette: this.palette,
+        theme: this.theme,
+        layerDirty: true,
+        layerTime: -1,
+      };
+      this.sprites = new PetalSpriteSet(this.config.petals);
+      this.layer = createSurface(this.layer.width, this.layer.height);
+      this.layerCtx = getContext2D(this.layer);
+      this.wipeEdge = wipe!;
+    }
 
     this.theme = theme;
     if (colors !== undefined) this.petalColors = colors;
@@ -217,6 +255,18 @@ export class Engine {
       this.layerDirty = true;
       if (!this.isRunning()) this.draw();
     }
+  }
+
+  /** Drop the old look once the wipe has fully passed. */
+  endWipe(): void {
+    if (this.oldLook) {
+      this.oldLook.sprites.dispose();
+      this.oldLook.layer.width = 1;
+      this.oldLook.layer.height = 1;
+      this.oldLook = null;
+    }
+    this.wipeEdge = null;
+    if (!this.destroyed && !this.isRunning() && this.width > 0) this.draw();
   }
 
   /** Enable or disable reduced-motion mode (static composition, no loop). */
@@ -443,7 +493,7 @@ export class Engine {
       const x = W * (0.08 + s0 * 0.84) + Math.sin(t * (0.05 + s1 * 0.05) + s3 * 6.28) * W * 0.05;
       // Slow vertical wrap, gently coupled to scroll for parallax depth.
       const yRaw = H * s1 + t * (4 + s2 * 6) - scrollY * (0.03 + s3 * 0.05);
-      const y = ((yRaw % (H + r * 2)) + (H + r * 2)) % (H + r * 2) - r;
+      const y = (((yRaw % (H + r * 2)) + (H + r * 2)) % (H + r * 2)) - r;
       const rot = -0.7 + s3 * 1.4 + Math.sin(t * 0.08 + s0 * 6) * 0.25;
       const alpha = (light ? 0.1 : 0.12) * (0.55 + s2 * 0.45);
 
@@ -467,16 +517,94 @@ export class Engine {
     if (this.destroyed || this.width === 0) return;
 
     const ctx = this.ctx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    const old = this.oldLook;
+    const edge = this.wipeEdge;
+    if (!old || !edge) {
+      this.drawScene(ctx);
+      return;
+    }
+
+    // Theme wipe: the old look above the edge, the new look below it, exactly
+    // matching the page's wave reveal (new theme rises from the bottom).
+    const sample = edge();
+    if (!sample) {
+      this.endWipe();
+      this.drawScene(ctx);
+      return;
+    }
+
+    ctx.save();
+    this.clipWipe(ctx, sample, false);
+    this.swapLook(old);
+    this.drawScene(ctx);
+    this.swapLook(old);
+    ctx.restore();
+
+    ctx.save();
+    this.clipWipe(ctx, sample, true);
+    this.drawScene(ctx);
+    ctx.restore();
+  }
+
+  /** Clip to the region above (`below=false`) or below the wave edge. */
+  private clipWipe(
+    ctx: CanvasRenderingContext2D,
+    edgeAt: (x01: number) => number,
+    below: boolean,
+  ): void {
+    const W = this.canvas.width;
+    const H = this.canvas.height;
+    const N = 48;
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const x = (i / N) * W;
+      const y = edgeAt(i / N) * H;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    if (below) {
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+    } else {
+      ctx.lineTo(W, 0);
+      ctx.lineTo(0, 0);
+    }
+    ctx.closePath();
+    ctx.clip();
+  }
+
+  /** Exchange the live look with `other` (used to render the old side of a wipe). */
+  private swapLook(other: Look): void {
+    const cur: Look = {
+      sprites: this.sprites,
+      layer: this.layer,
+      layerCtx: this.layerCtx,
+      palette: this.palette,
+      theme: this.theme,
+      layerDirty: this.layerDirty,
+      layerTime: this.layerTime,
+    };
+    this.sprites = other.sprites;
+    this.layer = other.layer;
+    this.layerCtx = other.layerCtx;
+    this.palette = other.palette;
+    this.theme = other.theme;
+    this.layerDirty = other.layerDirty;
+    this.layerTime = other.layerTime;
+    Object.assign(other, cur);
+  }
+
+  private drawScene(ctx: CanvasRenderingContext2D): void {
     const dpr = this.dpr;
     const cfg = this.config;
     const progress = this.growthProgress();
     const front = this.branches.frontDistance(progress);
 
     const scrollY = this.scrollSource ? Math.max(0, this.scrollSource().y) : 0;
-
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.globalAlpha = 1;
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // 1. Branch layer: only while the hero is (partly) in view.
     const fade =

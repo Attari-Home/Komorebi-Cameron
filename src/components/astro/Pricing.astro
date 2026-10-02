@@ -1,0 +1,119 @@
+---
+import Container from './Container.astro';
+import { PRICING_TIERS } from '../../data/pricing';
+---
+
+<section
+  id="pricing"
+  aria-labelledby="pricing-heading"
+  class="relative scroll-mt-24 py-28 lg:py-44"
+>
+  <Container>
+    <div class="max-w-3xl" data-reveal>
+      <p class="mb-8 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted">
+        <span aria-hidden="true" class="h-px w-10 bg-sakura-gradient"></span>
+        Packages
+      </p>
+      <h2 id="pricing-heading" class="i-text text-balance font-sans text-display-lg font-semibold">
+        Transparent tiers,
+        <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] pr-[0.08em] text-[1.12em] leading-[0.9]">
+          no surprises
+        </em>
+        .
+      </h2>
+      <p class="i-text i-text-muted mt-8 max-w-2xl text-pretty text-lg leading-relaxed sm:text-xl">
+        Every package is scoped in writing and delivered over email. Choose a starting point and we
+        will tailor it to your project.
+      </p>
+    </div>
+
+    <ul class="mt-16 grid gap-6 lg:mt-24 lg:grid-cols-3">
+      {PRICING_TIERS.map((tier, i) => (
+        <li data-reveal style={`--reveal-delay: ${i * 130}ms`} class="flex">
+          <article
+            class:list={[
+              'glass-card flex w-full flex-col p-8 sm:p-10',
+              tier.featured && 'border-sakura-a/50 shadow-glow-md',
+            ]}
+          >
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-xs font-medium uppercase tracking-[0.24em] text-sakura-a">
+                {tier.kicker}
+              </p>
+              {tier.featured && (
+                <span class="rounded-full border border-sakura-a/40 bg-sakura-a/15 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-fg">
+                  Popular
+                </span>
+              )}
+            </div>
+            <h3 class="i-text mt-4 text-balance font-sans text-2xl font-semibold leading-tight">
+              {tier.name}
+            </h3>
+            <p class="mt-6 flex items-baseline gap-2">
+              <span class="text-sakura-gradient font-sans text-5xl font-semibold tracking-tight">
+                {tier.price}
+              </span>
+              <span class="text-sm text-fg-muted">{tier.priceNote}</span>
+            </p>
+            <p class="i-text i-text-muted mt-5 leading-relaxed">{tier.summary}</p>
+
+            <ul class="mt-8 flex-1 space-y-3 border-t border-line/10 pt-8">
+              {tier.features.map((feature) => (
+                <li class="i-text i-text-muted flex gap-3 text-sm leading-relaxed">
+                  <span
+                    aria-hidden="true"
+                    class="mt-[0.55rem] h-1.5 w-1.5 shrink-0 rounded-full bg-sakura-a shadow-glow-sm"
+                  />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+
+            <a
+              href="#contact"
+              data-tier={tier.id}
+              data-tier-name={tier.name}
+              data-tier-project={tier.projectType}
+              data-tier-budget={tier.budget}
+              class:list={[
+                'btn-glass mt-10 w-full justify-center',
+                tier.featured && 'btn-glass-primary',
+              ]}
+              aria-label={`Start via email: ${tier.name}`}
+            >
+              Start via Email
+            </a>
+          </article>
+        </li>
+      ))}
+    </ul>
+
+    <p class="i-text i-text-muted mt-10 text-center text-sm" data-reveal>
+      Not sure which fits? Pick the closest and describe your goals. We will recommend the right
+      scope by email.
+    </p>
+  </Container>
+</section>
+
+<script>
+  import { TIER_EVENT, setPendingTier } from '../../lib/tierSelect';
+
+  document.querySelectorAll<HTMLAnchorElement>('a[data-tier]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const detail = {
+        id: link.dataset.tier ?? '',
+        name: link.dataset.tierName ?? '',
+        projectType: link.dataset.tierProject ?? '',
+        budget: link.dataset.tierBudget ?? '',
+      };
+      setPendingTier(detail);
+      window.dispatchEvent(new CustomEvent(TIER_EVENT, { detail }));
+
+      const target = document.getElementById('contact');
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      target?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+      history.replaceState(null, '', '#contact');
+    });
+  });
+</script>

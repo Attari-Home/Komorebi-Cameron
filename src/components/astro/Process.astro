@@ -3,7 +3,11 @@ import Container from './Container.astro';
 import { PROCESS_STEPS } from '../../data/content';
 ---
 
-<section id="process" aria-labelledby="process-heading" class="relative scroll-mt-24 py-28 lg:py-44">
+<section
+  id="process"
+  aria-labelledby="process-heading"
+  class="relative scroll-mt-24 py-28 lg:py-44"
+>
   <Container>
     <div class="max-w-3xl" data-reveal>
       <p class="mb-8 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted">
@@ -12,84 +16,87 @@ import { PROCESS_STEPS } from '../../data/content';
       </p>
       <h2 id="process-heading" class="i-text text-balance font-sans text-display-lg font-semibold">
         A calm,
-        <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] pr-[0.08em] text-[1.12em] leading-[0.9]">deliberate</em>
+        <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] pr-[0.08em] text-[1.12em] leading-[0.9]">
+          deliberate
+        </em>
         process.
       </h2>
       <p class="i-text i-text-muted mt-8 max-w-2xl text-pretty text-lg leading-relaxed sm:text-xl">
-        Four stages, each with clear outputs. Select a step to see what it
-        involves.
+        Four stages, each with clear outputs. Select a step to see what it involves.
       </p>
     </div>
 
     <div class="mt-16 lg:mt-24" data-timeline data-reveal style="--reveal-delay: 100ms">
       <div role="tablist" aria-label="Project process" class="grid gap-4 lg:grid-cols-4">
-        {
-          PROCESS_STEPS.map((step, i) => (
-            <button
-              type="button"
-              role="tab"
-              id={`tab-${step.id}`}
-              aria-controls={`panel-${step.id}`}
-              aria-selected={i === 0 ? 'true' : 'false'}
-              tabindex={i === 0 ? 0 : -1}
-              data-state={i === 0 ? 'active' : 'idle'}
-              class="timeline-step"
-            >
-              <span class="timeline-node" aria-hidden="true" />
-              {i < PROCESS_STEPS.length - 1 && <span class="timeline-connector" aria-hidden="true" />}
-              <span class="block text-xs font-medium tracking-[0.28em] text-sakura-a">{step.number}</span>
-              <span class="mt-3 block font-sans text-2xl font-semibold text-fg">{step.title}</span>
-              <span class="mt-2 block text-sm leading-relaxed text-fg-muted">{step.summary}</span>
-            </button>
-          ))
-        }
+        {PROCESS_STEPS.map((step, i) => (
+          <button
+            type="button"
+            role="tab"
+            id={`tab-${step.id}`}
+            aria-controls={`panel-${step.id}`}
+            aria-selected={i === 0 ? 'true' : 'false'}
+            tabindex={i === 0 ? 0 : -1}
+            data-state={i === 0 ? 'active' : 'idle'}
+            class="timeline-step"
+          >
+            <span class="timeline-node" aria-hidden="true" />
+            {i < PROCESS_STEPS.length - 1 && <span class="timeline-connector" aria-hidden="true" />}
+            <span class="block text-xs font-medium tracking-[0.28em] text-sakura-a">
+              {step.number}
+            </span>
+            <span class="mt-3 block font-sans text-2xl font-semibold text-fg">{step.title}</span>
+            <span class="mt-2 block text-sm leading-relaxed text-fg-muted">{step.summary}</span>
+          </button>
+        ))}
       </div>
 
       <div class="mt-6">
-        {
-          PROCESS_STEPS.map((step, i) => (
-            <div
-              role="tabpanel"
-              id={`panel-${step.id}`}
-              aria-labelledby={`tab-${step.id}`}
-              hidden={i !== 0}
-              tabindex="0"
-              class="glass-strong grid gap-10 rounded-3xl p-8 sm:p-12 lg:grid-cols-12"
-            >
-              <div class="lg:col-span-7">
-                <p class="text-xs font-medium uppercase tracking-[0.28em] text-sakura-a">
-                  Step {step.number} · {step.duration}
-                </p>
-                <h3 class="i-text accent-serif mt-4 text-5xl sm:text-6xl">{step.title}</h3>
-                <p class="i-text i-text-muted mt-6 text-pretty text-lg leading-relaxed">{step.description}</p>
-              </div>
-              <div class="lg:col-span-5">
-                <p class="text-xs font-medium uppercase tracking-[0.24em] text-fg-muted">Deliverables</p>
-                <ul class="mt-5 space-y-3">
-                  {step.deliverables.map((item) => (
-                    <li class="flex items-start gap-3 rounded-2xl border border-line/10 bg-fg/[0.03] px-4 py-3.5 text-sm leading-relaxed">
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2.2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="mt-0.5 shrink-0 text-sakura-a"
-                        aria-hidden="true"
-                      >
-                        <path d="M5 12.5l4.5 4.5L19 7.5" />
-                      </svg>
-                      <span class="i-text">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        {PROCESS_STEPS.map((step, i) => (
+          <div
+            role="tabpanel"
+            id={`panel-${step.id}`}
+            aria-labelledby={`tab-${step.id}`}
+            hidden={i !== 0}
+            tabindex="0"
+            class="glass-strong grid gap-10 rounded-3xl p-8 sm:p-12 lg:grid-cols-12"
+          >
+            <div class="lg:col-span-7">
+              <p class="text-xs font-medium uppercase tracking-[0.28em] text-sakura-a">
+                Step {step.number} · {step.duration}
+              </p>
+              <h3 class="i-text accent-serif mt-4 text-5xl sm:text-6xl">{step.title}</h3>
+              <p class="i-text i-text-muted mt-6 text-pretty text-lg leading-relaxed">
+                {step.description}
+              </p>
             </div>
-          ))
-        }
+            <div class="lg:col-span-5">
+              <p class="text-xs font-medium uppercase tracking-[0.24em] text-fg-muted">
+                Deliverables
+              </p>
+              <ul class="mt-5 space-y-3">
+                {step.deliverables.map((item) => (
+                  <li class="flex items-start gap-3 rounded-2xl border border-line/10 bg-fg/[0.03] px-4 py-3.5 text-sm leading-relaxed">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="mt-0.5 shrink-0 text-sakura-a"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 12.5l4.5 4.5L19 7.5" />
+                    </svg>
+                    <span class="i-text">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   </Container>

@@ -3,6 +3,7 @@ import { Engine } from '../../engine/Engine';
 import { getCurrentPaletteId, onPaletteChange, resolvePetalColors } from '../../lib/petalPalette';
 import { scrollBus } from '../../lib/scrollBus';
 import { getCurrentTheme, onThemeChange } from '../../lib/theme';
+import { WAVE_DONE_EVENT, getWaveEdge } from '../../lib/wave';
 
 /**
  * Mounts the canvas engine as a fixed, full-viewport layer behind the page.
@@ -62,8 +63,17 @@ export default function CanvasStage() {
     // Theme or palette change => one atomic sprite rebuild.
     const applyAppearance = () => {
       const t = getCurrentTheme();
-      engine.setAppearance(t, resolvePetalColors(getCurrentPaletteId(), t));
+      const waving = document.documentElement.classList.contains('wave-transition');
+      engine.setAppearance(
+        t,
+        resolvePetalColors(getCurrentPaletteId(), t),
+        waving ? getWaveEdge : null,
+      );
     };
+    // During the wave the engine renders old petals above the moving edge and
+    // new petals below it, so colours change exactly as the wave crosses.
+    const onWaveDone = () => engine.endWipe();
+    window.addEventListener(WAVE_DONE_EVENT, onWaveDone);
     const offTheme = onThemeChange(applyAppearance);
     const offPalette = onPaletteChange(applyAppearance);
 
@@ -76,6 +86,7 @@ export default function CanvasStage() {
       if (resizeFrame !== 0) cancelAnimationFrame(resizeFrame);
       resizeObserver.disconnect();
       offTheme();
+      window.removeEventListener(WAVE_DONE_EVENT, onWaveDone);
       offPalette();
       motionQuery.removeEventListener('change', onMotionChange);
       engine.destroy();

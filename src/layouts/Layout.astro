@@ -107,10 +107,7 @@ const jsonLd = {
             theme = 'light';
           }
         } catch (e) {
-          if (
-            window.matchMedia &&
-            window.matchMedia('(prefers-color-scheme: light)').matches
-          ) {
+          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
             theme = 'light';
           }
         }
@@ -128,7 +125,6 @@ const jsonLd = {
         if (meta) meta.setAttribute('content', theme === 'light' ? '#FAF7F8' : '#0A0A0C');
       })();
     </script>
-
     <!-- Primary SEO -->
     <title>{title}</title>
     <meta name="description" content={description} />
@@ -138,9 +134,11 @@ const jsonLd = {
     <meta name="color-scheme" content="dark light" />
     <meta
       name="robots"
-      content={noindex
-        ? 'noindex, nofollow'
-        : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'}
+      content={
+        noindex
+          ? 'noindex, nofollow'
+          : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
+      }
     />
     <link rel="canonical" href={canonicalUrl} />
     <link rel="sitemap" href="/sitemap-index.xml" />
@@ -169,13 +167,7 @@ const jsonLd = {
 
     <!-- Font preloads: only the two files needed above the fold -->
     <link rel="preload" href={jakartaFont} as="font" type="font/woff2" crossorigin />
-    <link
-      rel="preload"
-      href={cormorantItalicFont}
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+    <link rel="preload" href={cormorantItalicFont} as="font" type="font/woff2" crossorigin />
 
     <!-- Structured data -->
     <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
@@ -194,10 +186,7 @@ const jsonLd = {
       whole page; branches fade out after the hero). 100lvh so mobile URL-bar
       changes never resize it.
     -->
-    <div
-      aria-hidden="true"
-      class="ambient-bg pointer-events-none fixed inset-0 -z-20"
-    ></div>
+    <div aria-hidden="true" class="ambient-bg pointer-events-none fixed inset-0 -z-20"></div>
 
     <div
       id="canvas-root"

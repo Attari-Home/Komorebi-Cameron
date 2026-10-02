@@ -247,7 +247,8 @@ export class PetalPool implements PetalBuffers {
     this.scale[i] =
       (cfg.sizeRange[0] + (cfg.sizeRange[1] - cfg.sizeRange[0]) * Math.pow(dn, 1.15)) *
       randRange(rand, 0.88, 1.08);
-    this.alpha[i] = cfg.alphaRange[0] + (cfg.alphaRange[1] - cfg.alphaRange[0]) * (0.25 + 0.75 * dn);
+    this.alpha[i] =
+      cfg.alphaRange[0] + (cfg.alphaRange[1] - cfg.alphaRange[0]) * (0.25 + 0.75 * dn);
 
     this.phase[i] = rand() * Math.PI * 2;
     this.swayFreq[i] = randRange(rand, cfg.swayFrequency[0], cfg.swayFrequency[1]);

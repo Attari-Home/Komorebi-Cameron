@@ -36,8 +36,7 @@
     --line-alpha: 0.09;
     --sakura-a: 255 112 166; /* #FF70A6 */
     --sakura-b: 255 183 197; /* #FFB7C5 */
-    --glass-shadow: 0 8px 32px -8px rgb(0 0 0 / 0.45),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+    --glass-shadow: 0 8px 32px -8px rgb(0 0 0 / 0.45), inset 0 1px 0 0 rgb(255 255 255 / 0.06);
     --selection-bg: 255 112 166;
     --selection-fg: 10 10 12;
     --hover-tint: 255 183 197; /* text colour the proximity effect warms toward */
@@ -62,8 +61,7 @@
     /* Darkened sakura pair keeps AA contrast on the blossom background. */
     --sakura-a: 204 30 98; /* #CC1E62, 5.0:1 on #FAF7F8 */
     --sakura-b: 245 143 168;
-    --glass-shadow: 0 8px 32px -12px rgb(120 60 85 / 0.22),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.9);
+    --glass-shadow: 0 8px 32px -12px rgb(120 60 85 / 0.22), inset 0 1px 0 0 rgb(255 255 255 / 0.9);
     --selection-bg: 255 112 166;
     --selection-fg: 26 20 24;
     --hover-tint: 204 30 98;
@@ -150,6 +148,46 @@
       fill 0.45s ease,
       stroke 0.45s ease,
       box-shadow 0.45s ease !important;
+  }
+
+  /* Liquid wave reveal for theme / palette changes (see src/lib/wave.ts).
+     The default cross-fade is switched off; the new page is revealed through a
+     clip-path animated from script. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+  ::view-transition-old(root) {
+    z-index: 1;
+  }
+  ::view-transition-new(root) {
+    z-index: 2;
+    /* Start fully hidden so the new theme never shows before the wave begins. */
+    clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+  }
+
+  /* Keep the petal canvas alive during the wave. Anything inside the root
+     snapshot is a frozen bitmap on the "old" side, so the canvas gets its own
+     transition group: only the live "new" image is shown, drawn above the
+     page snapshot. Scoped to the transition so no stacking context is created
+     the rest of the time. */
+  html.wave-transition #canvas-root {
+    view-transition-name: kc-stage;
+  }
+  ::view-transition-group(kc-stage) {
+    z-index: 3;
+    animation: none;
+  }
+  ::view-transition-old(kc-stage) {
+    display: none;
+  }
+  ::view-transition-new(kc-stage) {
+    animation: none;
+    mix-blend-mode: normal;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
   }
 
   ::selection {
@@ -252,11 +290,7 @@
     inset: -1px;
     z-index: -1;
     border-radius: inherit;
-    background: radial-gradient(
-      80% 60% at 50% 0%,
-      rgb(var(--sakura-a) / 0.14) 0%,
-      transparent 70%
-    );
+    background: radial-gradient(80% 60% at 50% 0%, rgb(var(--sakura-a) / 0.14) 0%, transparent 70%);
     opacity: 0;
     transition: opacity 0.45s ease;
     pointer-events: none;
@@ -622,7 +656,6 @@
   }
 }
 
-
 /* --------------------------------------------------------------------------
    Ambient atmosphere + footer mountains (palette-aware via --sakura-*)
    -------------------------------------------------------------------------- */
@@ -640,17 +673,49 @@
       radial-gradient(70vmax 40vmax at 30% 100%, rgb(var(--accent-glow) / 0.07), transparent 70%);
   }
 
-    .s-a{stop-color:rgb(var(--sakura-a))}.s-b{stop-color:rgb(var(--sakura-b))}.s-fg{stop-color:rgb(var(--fg))}.s-bg{stop-color:rgb(var(--bg))}.s-mist{stop-color:rgb(var(--sakura-b))}
-  .ls-disc{fill:rgb(var(--text-accent) / 0.85)}
-  .ls-ridge{fill:none;stroke:rgb(var(--border-accent) / 0.4);stroke-linecap:round}
-  .ls-fore{fill:rgb(var(--bg))}
-  .ls-fog{mix-blend-mode:normal}
-  .bird-silhouette{fill:rgb(var(--fg) / 0.55)}
+  .s-a {
+    stop-color: rgb(var(--sakura-a));
+  }
+  .s-b {
+    stop-color: rgb(var(--sakura-b));
+  }
+  .s-fg {
+    stop-color: rgb(var(--fg));
+  }
+  .s-bg {
+    stop-color: rgb(var(--bg));
+  }
+  .s-mist {
+    stop-color: rgb(var(--sakura-b));
+  }
+  .ls-disc {
+    fill: rgb(var(--text-accent) / 0.85);
+  }
+  .ls-ridge {
+    fill: none;
+    stroke: rgb(var(--border-accent) / 0.4);
+    stroke-linecap: round;
+  }
+  .ls-fore {
+    fill: rgb(var(--bg));
+  }
+  .ls-fog {
+    mix-blend-mode: normal;
+  }
+  .bird-silhouette {
+    fill: rgb(var(--fg) / 0.55);
+  }
 
-  .ls-birds { animation: bird-drift 42s linear infinite alternate; }
+  .ls-birds {
+    animation: bird-drift 42s linear infinite alternate;
+  }
 }
 
 @keyframes bird-drift {
-  from { transform: translate3d(-70px, 6px, 0); }
-  to { transform: translate3d(90px, -8px, 0); }
+  from {
+    transform: translate3d(-70px, 6px, 0);
+  }
+  to {
+    transform: translate3d(90px, -8px, 0);
+  }
 }

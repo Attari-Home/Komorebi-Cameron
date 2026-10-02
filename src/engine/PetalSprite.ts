@@ -162,20 +162,13 @@ export class PetalSpriteSet {
       const mid = mixRgb(base, tip, 0.55);
 
       const root = Math.sqrt(spec.aspect);
-      paintPetal(
-        ctx,
-        PETAL_BASE_WIDTH / root,
-        PETAL_BASE_HEIGHT * root,
-        spec.bulge,
-        spec.notch,
-        {
-          base: rgbToCss(base, 0.96),
-          mid: rgbToCss(mid, 0.94),
-          tip: rgbToCss(tip, 0.9),
-          rim: rgbToCss(tint, 0.34),
-          vein: rgbToCss(a, 0.32),
-        },
-      );
+      paintPetal(ctx, PETAL_BASE_WIDTH / root, PETAL_BASE_HEIGHT * root, spec.bulge, spec.notch, {
+        base: rgbToCss(base, 0.96),
+        mid: rgbToCss(mid, 0.94),
+        tip: rgbToCss(tip, 0.9),
+        rim: rgbToCss(tint, 0.34),
+        vein: rgbToCss(a, 0.32),
+      });
 
       this.variants.push(sprite);
     }

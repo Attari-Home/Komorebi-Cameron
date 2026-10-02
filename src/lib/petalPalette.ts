@@ -15,6 +15,7 @@ import {
   type PetalPaletteId,
 } from '../data/petalPalettes';
 import type { Theme } from './theme';
+import { runWave } from './wave';
 
 export const PALETTE_STORAGE_KEY = 'kc-petal-palette';
 export const PALETTE_ATTRIBUTE = 'data-petal-palette';
@@ -55,17 +56,23 @@ export function setPetalPalette(id: PetalPaletteId, options: { persist?: boolean
   if (typeof document === 'undefined') return;
   const { persist = true } = options;
 
-  document.documentElement.setAttribute(PALETTE_ATTRIBUTE, id);
+  const apply = () => {
+    document.documentElement.setAttribute(PALETTE_ATTRIBUTE, id);
 
-  if (persist) {
-    try {
-      window.localStorage.setItem(PALETTE_STORAGE_KEY, id);
-    } catch {
-      /* ignore storage failures */
+    if (persist) {
+      try {
+        window.localStorage.setItem(PALETTE_STORAGE_KEY, id);
+      } catch {
+        /* ignore storage failures */
+      }
     }
-  }
 
-  window.dispatchEvent(new CustomEvent<PetalPaletteId>(PALETTE_CHANGE_EVENT, { detail: id }));
+    window.dispatchEvent(new CustomEvent<PetalPaletteId>(PALETTE_CHANGE_EVENT, { detail: id }));
+  };
+
+  // User picks (persist = true) flow in as a wave; sync from other tabs is instant.
+  if (persist && getCurrentPaletteId() !== id) runWave(apply);
+  else apply();
 }
 
 /** Subscribe to palette changes (this tab and other tabs). */

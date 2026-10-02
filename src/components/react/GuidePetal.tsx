@@ -191,7 +191,8 @@ export default function GuidePetal() {
       );
       const bob = Math.sin(time * 0.9) * 5;
       const eased = p * p * (3 - 2 * p);
-      const targetY = vh * lerp(0.14, 0.86, eased) + Math.cos(phase) * Math.min(vh * 0.04, 28) + bob;
+      const targetY =
+        vh * lerp(0.14, 0.86, eased) + Math.cos(phase) * Math.min(vh * 0.04, 28) + bob;
 
       if (!initialised) {
         s.x = targetX;
@@ -215,7 +216,10 @@ export default function GuidePetal() {
 
       // ---- Orientation: angular inertia driven by velocity (rot += vel * 0.05) ---
       const torque =
-        (Math.cos(phase) * 0.9 + s.vx * 0.05 * 0.06 + clamp(bus.velocity * 0.0004, -0.8, 0.8)) - s.rot;
+        Math.cos(phase) * 0.9 +
+        s.vx * 0.05 * 0.06 +
+        clamp(bus.velocity * 0.0004, -0.8, 0.8) -
+        s.rot;
       s.av += (torque * 9 - s.av * 3.2) * dt;
       s.rot += s.av * dt;
 
@@ -332,7 +336,13 @@ export default function GuidePetal() {
         // Deterministic offset from the sample time, so motes shimmer in place.
         const off = Math.sin(trailT[i]! * 37.7) * 3.2;
         tctx.beginPath();
-        tctx.arc(trailX[i]! + off, trailY[i]! + Math.cos(trailT[i]! * 23.1) * 2.4, 0.7 + fade * 0.6, 0, Math.PI * 2);
+        tctx.arc(
+          trailX[i]! + off,
+          trailY[i]! + Math.cos(trailT[i]! * 23.1) * 2.4,
+          0.7 + fade * 0.6,
+          0,
+          Math.PI * 2,
+        );
         tctx.fill();
       }
 

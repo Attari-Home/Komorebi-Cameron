@@ -28,7 +28,8 @@ import { SITE } from '../../data/site';
         </defs>
         <path
           d="M32 6c10 9 15 19 11 30-2 7-7 11-11 19-4-8-9-12-11-19-4-11 1-21 11-30z"
-          fill="url(#hdr-petal)"></path>
+          fill="url(#hdr-petal)"
+        ></path>
       </svg>
       <span class="text-sm font-semibold tracking-wide">
         Komorebi <span class="accent-serif text-base">Cameron</span>
@@ -37,18 +38,16 @@ import { SITE } from '../../data/site';
 
     <nav aria-label="Primary" class="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
       <ul class="mr-2 hidden items-center gap-1 lg:flex">
-        {
-          SITE.nav.map((item) => (
-            <li>
-              <a
-                href={item.href}
-                class="inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-medium text-fg-muted transition-colors duration-300 hover:text-fg"
-              >
-                {item.label}
-              </a>
-            </li>
-          ))
-        }
+        {SITE.nav.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              class="inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-medium text-fg-muted transition-colors duration-300 hover:text-fg"
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
       </ul>
 
       <PaletteSelector client:only="react">

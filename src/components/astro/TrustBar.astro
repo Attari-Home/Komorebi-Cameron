@@ -1,0 +1,202 @@
+---
+import Container from './Container.astro';
+import StudioClock from '../react/StudioClock';
+import { SITE } from '../../data/site';
+
+const GUARANTEES = [
+  {
+    id: 'async',
+    kanji: '非同期',
+    title: '100% Async & Text-First',
+    text: 'Fast email updates, zero mandatory meetings.',
+    detail:
+      'Everything happens in writing, by email, Discord or text. Briefs, feedback and approvals live in threads you can search later. No calls, no scheduled meetings, no time-zone juggling.',
+    icon: 'M4 6h16v12H4zM4 7l8 6 8-6',
+  },
+  {
+    id: 'vitals',
+    kanji: '極速',
+    title: '100/100 Core Web Vitals',
+    text: 'A performance guarantee on every build.',
+    detail:
+      'Each build is measured with Lighthouse and Core Web Vitals against a performance budget agreed in writing before work begins, and verified before launch.',
+    icon: 'M13 2 4 14h7l-1 8 9-12h-7l1-8z',
+  },
+  {
+    id: 'ownership',
+    kanji: '所有',
+    title: '100% Code & IP Ownership',
+    text: 'Full codebase handover at launch.',
+    detail:
+      'At handover you receive the complete repository, assets and documentation. The code and the IP are yours outright, with no licence fees and no lock-in.',
+    icon: 'M6 11h12v9H6zM9 11V8a3 3 0 0 1 6 0v3',
+  },
+  {
+    id: 'support',
+    kanji: '支援',
+    title: '30-Day Post-Launch Support',
+    text: 'Included with every package.',
+    detail:
+      'For 30 days after launch, bug fixes and launch-related adjustments are included and handled over email, so the release is calm and nothing is left hanging.',
+    icon: 'M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3zM9 12l2 2 4-4',
+  },
+] as const;
+
+const FLOW = [
+  { n: '01', title: 'Send your brief', text: 'The form above, in your own words.' },
+  { n: '02', title: 'Written reply', text: `We respond ${SITE.contact.responseTime}.` },
+  { n: '03', title: 'Build updates', text: 'Progress and previews land in your inbox.' },
+  { n: '04', title: 'Handover', text: 'Code, assets and docs, all yours.' },
+] as const;
+---
+
+<section
+  id="guarantees"
+  aria-labelledby="guarantees-heading"
+  class="relative scroll-mt-24 py-16 lg:py-24"
+>
+  <Container>
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between" data-reveal>
+      <div class="max-w-2xl">
+        <p class="mb-6 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted">
+          <span aria-hidden="true" class="h-px w-10 bg-sakura-gradient"></span>
+          Our promise
+        </p>
+        <h2
+          id="guarantees-heading"
+          class="i-text text-balance font-sans text-display-md font-semibold"
+        >
+          Zero meetings. Total
+          <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] pr-[0.08em] text-[1.12em] leading-[0.9]">
+            momentum
+          </em>
+          .
+        </h2>
+      </div>
+      <div class="w-full max-w-sm shrink-0">
+        <StudioClock client:only="react">
+          <div slot="fallback" class="h-[5.5rem]" aria-hidden="true"></div>
+        </StudioClock>
+      </div>
+    </div>
+
+    <ul class="mt-12 grid items-start gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {GUARANTEES.map((g, i) => (
+        <li data-reveal style={`--reveal-delay: ${i * 110}ms`}>
+          <article class="glass-card group h-full">
+            <span
+              aria-hidden="true"
+              lang="ja"
+              class="pointer-events-none absolute -bottom-3 -right-2 select-none text-7xl font-semibold leading-none tracking-wide text-sakura-a/[0.07] transition-colors duration-500 group-hover:text-sakura-a/[0.14]"
+            >
+              {g.kanji}
+            </span>
+            <div class="relative">
+              <button
+                type="button"
+                aria-expanded="false"
+                aria-controls={`trust-${g.id}`}
+                data-trust-toggle
+                class="group/d flex w-full cursor-pointer flex-col gap-5 p-6 text-left outline-none focus-visible:ring-2 focus-visible:ring-sakura-a/60"
+              >
+                <span class="flex items-start justify-between">
+                  <span class="grid h-12 w-12 place-items-center rounded-2xl border border-sakura-a/30 bg-sakura-a/10 text-sakura-a transition-transform duration-500 ease-out-expo group-hover:scale-110 group-hover:rotate-3">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path d={g.icon} />
+                    </svg>
+                  </span>
+                  <span
+                    class="grid h-8 w-8 place-items-center rounded-full border border-line/15 text-fg-muted transition-transform duration-500 ease-out-expo group-aria-expanded/d:rotate-45"
+                    aria-hidden="true"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </span>
+                </span>
+                <span>
+                  <span class="i-text block text-balance font-sans text-lg font-semibold leading-snug">
+                    {g.title}
+                  </span>
+                  <span class="i-text i-text-muted mt-2 block text-sm leading-relaxed">
+                    {g.text}
+                  </span>
+                </span>
+              </button>
+              <div
+                id={`trust-${g.id}`}
+                data-trust-panel
+                data-open="false"
+                inert
+                class="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-500 ease-out-expo data-[open=true]:grid-rows-[1fr] data-[open=true]:opacity-100 motion-reduce:transition-none"
+              >
+                <div class="min-h-0 overflow-hidden">
+                  <p class="i-text i-text-muted border-t border-line/10 px-6 pb-14 pt-5 text-sm leading-relaxed">
+                    {g.detail}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </article>
+        </li>
+      ))}
+    </ul>
+
+    <div class="glass mt-8 rounded-3xl p-6 sm:p-8" data-reveal style="--reveal-delay: 200ms">
+      <p class="text-xs font-medium uppercase tracking-[0.24em] text-fg-muted">How async works</p>
+      <ol class="relative mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+        <span
+          aria-hidden="true"
+          class="absolute left-[1.15rem] top-3 hidden h-[calc(100%-1.5rem)] w-px bg-gradient-to-b from-sakura-a/50 to-transparent max-sm:block"
+        ></span>
+        <span
+          aria-hidden="true"
+          class="absolute left-0 right-0 top-[1.15rem] hidden h-px bg-gradient-to-r from-sakura-a/50 via-sakura-b/30 to-transparent lg:block"
+        ></span>
+        {FLOW.map((s) => (
+          <li class="relative flex gap-4 max-sm:pl-0 lg:block">
+            <span class="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-full border border-sakura-a/40 bg-bg text-xs font-semibold tracking-wider text-sakura-a shadow-glow-sm">
+              {s.n}
+            </span>
+            <div class="lg:mt-4">
+              <p class="i-text font-sans font-semibold text-fg">{s.title}</p>
+              <p class="i-text i-text-muted mt-1 text-sm leading-relaxed">{s.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </Container>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-trust-toggle]').forEach((button) => {
+    const panel = document.getElementById(button.getAttribute('aria-controls') ?? '');
+    if (!panel) return;
+    button.addEventListener('click', () => {
+      const open = button.getAttribute('aria-expanded') !== 'true';
+      button.setAttribute('aria-expanded', String(open));
+      panel.dataset.open = String(open);
+      panel.toggleAttribute('inert', !open);
+    });
+  });
+</script>

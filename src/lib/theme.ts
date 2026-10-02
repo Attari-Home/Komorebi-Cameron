@@ -9,6 +9,8 @@
  * script in `Layout.astro`.
  */
 
+import { runWave } from './wave';
+
 export type Theme = 'dark' | 'light';
 
 export const THEME_STORAGE_KEY = 'kc-theme';
@@ -72,6 +74,8 @@ interface SetThemeOptions {
   persist?: boolean;
   /** Animate the colour handoff. Defaults to true. */
   animate?: boolean;
+  /** Use the flowing wave page transition (user-initiated changes). */
+  wave?: boolean;
 }
 
 /**
@@ -81,39 +85,47 @@ interface SetThemeOptions {
 export function setTheme(theme: Theme, options: SetThemeOptions = {}): void {
   if (typeof document === 'undefined') return;
 
-  const { persist = true, animate = true } = options;
+  const { persist = true, animate = true, wave = false } = options;
   const root = document.documentElement;
 
   const reduceMotion =
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  const apply = () => {
+    root.setAttribute(THEME_ATTRIBUTE, theme);
+    root.style.colorScheme = theme;
+
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', THEME_COLORS[theme]);
+
+    if (persist) {
+      try {
+        window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+      } catch {
+        /* ignore storage failures */
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent<Theme>(THEME_CHANGE_EVENT, { detail: theme }));
+  };
+
+  if (wave && !reduceMotion) {
+    runWave(apply);
+    return;
+  }
+
   if (animate && !reduceMotion) {
     root.classList.add('theme-transition');
     window.setTimeout(() => root.classList.remove('theme-transition'), 500);
   }
-
-  root.setAttribute(THEME_ATTRIBUTE, theme);
-  root.style.colorScheme = theme;
-
-  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', THEME_COLORS[theme]);
-
-  if (persist) {
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-    } catch {
-      /* ignore storage failures */
-    }
-  }
-
-  window.dispatchEvent(new CustomEvent<Theme>(THEME_CHANGE_EVENT, { detail: theme }));
+  apply();
 }
 
 /** Flip between dark and light and return the new theme. */
 export function toggleTheme(): Theme {
   const next: Theme = getCurrentTheme() === 'dark' ? 'light' : 'dark';
-  setTheme(next);
+  setTheme(next, { wave: true });
   return next;
 }
 

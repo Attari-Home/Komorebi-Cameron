@@ -14,40 +14,47 @@ const format = (value: number, decimals: number) => value.toFixed(decimals);
       </p>
       <h2 id="impact-heading" class="i-text text-balance font-sans text-display-lg font-semibold">
         Beauty that also
-        <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] -mr-[0.02em] pr-[0.02em] text-[1.12em] leading-[0.9]">performs</em>.
+        <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] -mr-[0.02em] pr-[0.02em] text-[1.12em] leading-[0.9]">
+          performs
+        </em>
+        .
       </h2>
     </div>
 
-    <dl class="glass-strong mt-16 grid overflow-hidden rounded-[2rem] sm:grid-cols-2 lg:mt-24 lg:grid-cols-4" data-reveal style="--reveal-delay: 120ms">
-      {
-        STATS.map((stat, i) => (
-          <div
-            class:list={[
-              'relative flex flex-col justify-between gap-10 p-8 sm:p-10',
-              i > 0 && 'border-t border-line/10 sm:border-t-0',
-              i % 2 === 1 && 'sm:border-l sm:border-line/10',
-              i >= 2 && 'sm:border-t sm:border-line/10 lg:border-t-0',
-              i > 0 && 'lg:border-l lg:border-line/10',
-            ]}
-          >
-            <dt class="i-text i-text-muted order-2 text-sm leading-relaxed">
-              <span class="block font-semibold text-fg">{stat.label}</span>
-              <span class="mt-1 block text-fg-muted">{stat.note}</span>
-            </dt>
-            <dd class="order-1 m-0">
-              <span
-                class="text-sakura-gradient inline-block font-sans text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl"
-                data-count-to={stat.value}
-                data-count-decimals={stat.decimals}
-                data-count-prefix={stat.prefix}
-                data-count-suffix={stat.suffix}
-              >
-                {stat.prefix}{format(stat.value, stat.decimals)}{stat.suffix}
-              </span>
-            </dd>
-          </div>
-        ))
-      }
+    <dl
+      class="glass-strong mt-16 grid overflow-hidden rounded-[2rem] sm:grid-cols-2 lg:mt-24 lg:grid-cols-4"
+      data-reveal
+      style="--reveal-delay: 120ms"
+    >
+      {STATS.map((stat, i) => (
+        <div
+          class:list={[
+            'relative flex flex-col justify-between gap-10 p-8 sm:p-10',
+            i > 0 && 'border-t border-line/10 sm:border-t-0',
+            i % 2 === 1 && 'sm:border-l sm:border-line/10',
+            i >= 2 && 'sm:border-t sm:border-line/10 lg:border-t-0',
+            i > 0 && 'lg:border-l lg:border-line/10',
+          ]}
+        >
+          <dt class="i-text i-text-muted order-2 text-sm leading-relaxed">
+            <span class="block font-semibold text-fg">{stat.label}</span>
+            <span class="mt-1 block text-fg-muted">{stat.note}</span>
+          </dt>
+          <dd class="order-1 m-0">
+            <span
+              class="text-sakura-gradient inline-block font-sans text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl"
+              data-count-to={stat.value}
+              data-count-decimals={stat.decimals}
+              data-count-prefix={stat.prefix}
+              data-count-suffix={stat.suffix}
+            >
+              {stat.prefix}
+              {format(stat.value, stat.decimals)}
+              {stat.suffix}
+            </span>
+          </dd>
+        </div>
+      ))}
     </dl>
 
     <p class="mt-6 text-center text-xs text-fg-muted" data-reveal>

@@ -17,21 +17,31 @@ export const SITE = {
   /** Public profile URLs. Leave empty until real profiles exist. */
   sameAs: [] as string[],
 
-  /** Placeholder contact details. Replace before launch. */
+  /**
+   * TODO (before launch): the domain, email and form endpoint below are
+   * placeholders. No domain is registered yet; update `url`, `contact.email`,
+   * `contact.formEndpoint` and `contact.formAccessKey` once they exist.
+   */
   contact: {
     email: 'hello@komorebicameron.com',
     /**
      * Optional form backend (e.g. a Formspree / Basin / custom endpoint that
      * accepts a JSON POST). When empty, the contact form opens the visitor's
      * email client with the message pre-filled instead.
+     * Formspree: https://formspree.io/f/XXXXXXXX
+     * Web3Forms: https://api.web3forms.com/submit (+ formAccessKey below)
      */
     formEndpoint: '',
-    responseTime: 'within one business day',
+    responseTime: 'within 7 days',
+    /** Web3Forms access key (public). Leave empty for Formspree-style endpoints. */
+    formAccessKey: '',
   },
 
   nav: [
     { label: 'Manifesto', href: '#manifesto' },
+    { label: 'Portfolio', href: '#portfolio' },
     { label: 'Services', href: '#services' },
+    { label: 'Pricing', href: '#pricing' },
     { label: 'Process', href: '#process' },
     { label: 'Impact', href: '#impact' },
     { label: 'Contact', href: '#contact' },

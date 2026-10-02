@@ -30,10 +30,7 @@ export default function SmoothScrollProvider({
 
     const startNative = (): (() => void) => {
       const publish = () => {
-        const limit = Math.max(
-          0,
-          document.documentElement.scrollHeight - window.innerHeight,
-        );
+        const limit = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
         scrollBus.update(window.scrollY, limit, performance.now());
       };
 

@@ -7,7 +7,11 @@ import sitemap from '@astrojs/sitemap';
 // https://astro.build/config
 export default defineConfig({
   // Canonical production origin. Used for sitemap, canonical and OG URLs.
-  site: 'https://komorebicameron.com',
+  site: 'https://attari-home.github.io',
+
+  // GitHub Pages project site lives under /<repo>/. Remove `base` and set
+  // `site` to your custom domain once one is connected.
+  base: '/Komorebi-Cameron',
 
   // Pure static site generation: zero server runtime, zero-JS initial payload.
   output: 'static',

@@ -63,13 +63,13 @@ export default function TierEstimator() {
             <span aria-hidden="true" className="h-px w-10 bg-sakura-gradient" />
             Live estimator
           </p>
-          <h3 className="i-text text-balance font-sans text-2xl font-semibold leading-tight sm:text-3xl">
+          <h3 className="text-balance font-sans text-2xl font-semibold leading-tight sm:text-3xl">
             Shape your build, see the
             <em className="accent-serif text-sakura-gradient ml-2 inline-block pb-[0.1em] pr-[0.06em] text-[1.12em] leading-[0.95]">
               tier
             </em>
           </h3>
-          <p className="i-text i-text-muted mt-3 max-w-xl text-sm leading-relaxed">
+          <p className="text-fg-muted mt-3 max-w-xl text-sm leading-relaxed">
             Switch on what you need. We point you to the smallest package that covers it.
           </p>
 
@@ -104,7 +104,7 @@ export default function TierEstimator() {
                       >
                         <span
                           className={[
-                            'absolute top-0.5 h-3 w-3 rounded-full bg-bg transition-transform duration-500 ease-out-expo',
+                            'absolute left-0 top-0.5 h-3 w-3 rounded-full bg-bg transition-transform duration-500 ease-out-expo',
                             on ? 'translate-x-3.5' : 'translate-x-0.5',
                           ].join(' ')}
                         />
@@ -122,7 +122,7 @@ export default function TierEstimator() {
           <p className="text-xs font-medium uppercase tracking-[0.24em] text-sakura-a">
             {touched ? 'Recommended' : 'Starting point'}
           </p>
-          <p className="i-text mt-3 font-sans text-xl font-semibold leading-snug">{tier.name}</p>
+          <p className="mt-3 font-sans text-xl font-semibold leading-snug">{tier.name}</p>
 
           <p className="mt-6 text-xs font-medium uppercase tracking-[0.2em] text-fg-muted">Indicative range</p>
           <p
@@ -134,7 +134,7 @@ export default function TierEstimator() {
 
           <ul className="mt-6 space-y-2.5 border-t border-line/10 pt-6">
             {(chosen.length ? chosen.map((f) => f.label) : tier.features).map((label) => (
-              <li key={label} className="i-text i-text-muted flex gap-3 text-sm leading-relaxed">
+              <li key={label} className="text-fg-muted flex gap-3 text-sm leading-relaxed">
                 <span aria-hidden="true" className="mt-[0.55rem] h-1.5 w-1.5 shrink-0 rounded-full bg-sakura-a shadow-glow-sm" />
                 {label}
               </li>

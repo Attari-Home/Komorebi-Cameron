@@ -6,14 +6,23 @@ import {
   onPaletteChange,
 } from '../../lib/petalPalette';
 import { transitionPalette } from '../../lib/liquidTransition';
-import { SEASONS, type SeasonSetting } from '../../data/seasons';
-import { getSeasonSetting, onSeasonChange, resolveSeason, setSeasonSetting } from '../../lib/season';
+import {
+  DENSITY_DEFAULT,
+  DENSITY_MAX,
+  DENSITY_MIN,
+  DENSITY_STEP,
+  getPetalDensity,
+  onPetalDensityChange,
+  setPetalDensity,
+} from '../../lib/petalDensity';
 
-const SEASON_CHOICES: ReadonlyArray<{ value: SeasonSetting; label: string }> = [
-  { value: 'off', label: 'Off' },
-  { value: 'auto', label: 'Auto' },
-  ...SEASONS.map((s) => ({ value: s.id as SeasonSetting, label: s.label })),
-];
+function densityLabel(percent: number): string {
+  if (percent <= 30) return 'Sparse';
+  if (percent < 90) return 'Light';
+  if (percent <= 110) return 'Signature';
+  if (percent <= 150) return 'Lush';
+  return 'Blizzard';
+}
 
 /**
  * Petal colour selector for the header.
@@ -25,7 +34,7 @@ const SEASON_CHOICES: ReadonlyArray<{ value: SeasonSetting; label: string }> = [
 export default function PaletteSelector() {
   const [id, setId] = useState<PetalPaletteId>(() => getCurrentPaletteId());
   const [open, setOpen] = useState(false);
-  const [season, setSeason] = useState<SeasonSetting>(() => getSeasonSetting());
+  const [density, setDensity] = useState<number>(() => getPetalDensity());
 
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -35,11 +44,11 @@ export default function PaletteSelector() {
   useEffect(() => {
     setId(getCurrentPaletteId());
     const offPalette = onPaletteChange(setId);
-    setSeason(getSeasonSetting());
-    const offSeason = onSeasonChange(setSeason);
+    setDensity(getPetalDensity());
+    const offDensity = onPetalDensityChange(setDensity);
     return () => {
       offPalette();
-      offSeason();
+      offDensity();
     };
   }, []);
 
@@ -126,7 +135,8 @@ export default function PaletteSelector() {
           id={menuId}
           role="radiogroup"
           aria-label="Petal colour"
-          className="glass-strong !bg-bg/80 absolute right-0 top-[calc(100%+0.75rem)] z-50 w-72 animate-fade-rise rounded-3xl p-2"
+          className="glass-strong absolute right-0 top-[calc(100%+0.75rem)] z-50 w-72 animate-fade-rise rounded-3xl p-2"
+          style={{ background: "rgb(var(--bg) / 0.96)" }}
         >
           {PETAL_PALETTES.map((palette, index) => {
             const selected = palette.id === id;
@@ -179,36 +189,42 @@ export default function PaletteSelector() {
             );
           })}
 
-          <div className="mx-2 mt-2 border-t border-line/10 pt-3">
-            <p className="px-1 text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-fg-muted">
-              Seasonal mode
-            </p>
-            <div role="group" aria-label="Seasonal mode" className="mt-2 flex flex-wrap gap-1.5 px-1 pb-2">
-              {SEASON_CHOICES.map((choice) => {
-                const active = season === choice.value;
-                return (
-                  <button
-                    key={choice.value}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setSeasonSetting(choice.value)}
-                    className={[
-                      'min-h-9 rounded-full border px-3.5 text-xs font-semibold tracking-wide transition-colors duration-300',
-                      active
-                        ? 'border-sakura-a/60 bg-sakura-a/15 text-sakura-a'
-                        : 'border-line/15 text-fg-muted hover:border-sakura-a/40 hover:text-fg',
-                    ].join(' ')}
-                  >
-                    {choice.label}
-                  </button>
-                );
-              })}
+          <div className="mx-2 mt-2 border-t border-line/10 pt-3 pb-1">
+            <div className="flex items-baseline justify-between px-1">
+              <label
+                htmlFor={`${menuId}-density`}
+                className="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-fg-muted"
+              >
+                Petal density
+              </label>
+              <span className="text-xs font-semibold tabular-nums text-sakura-a" aria-live="polite">
+                {densityLabel(density)} · {density}%
+              </span>
             </div>
-            <p className="px-1 pb-2 text-xs leading-relaxed text-fg-muted" aria-live="polite">
-              {season === 'off'
-                ? 'Petals follow the signature spring look.'
-                : `${resolveSeason(season)?.label}: ${resolveSeason(season)?.description.toLowerCase()}.`}
-            </p>
+            <input
+              id={`${menuId}-density`}
+              type="range"
+              min={DENSITY_MIN}
+              max={DENSITY_MAX}
+              step={DENSITY_STEP}
+              value={density}
+              onChange={(e) => setPetalDensity(Number(e.target.value))}
+              aria-valuetext={`${densityLabel(density)}, ${density} percent`}
+              className="density-range mt-3 w-full"
+              style={{ ['--fill' as string]: `${((density - DENSITY_MIN) / (DENSITY_MAX - DENSITY_MIN)) * 100}%` }}
+            />
+            <div className="mt-2 flex items-center justify-between px-1 text-[0.65rem] text-fg-muted">
+              <span>Fewer</span>
+              <button
+                type="button"
+                onClick={() => setPetalDensity(DENSITY_DEFAULT)}
+                disabled={density === DENSITY_DEFAULT}
+                className="rounded-full px-2 py-1 font-semibold uppercase tracking-[0.16em] transition-colors hover:text-fg disabled:opacity-40"
+              >
+                Reset
+              </button>
+              <span>More</span>
+            </div>
           </div>
         </div>
       )}

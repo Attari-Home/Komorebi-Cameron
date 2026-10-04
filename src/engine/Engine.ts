@@ -60,9 +60,6 @@ export class Engine {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
   private readonly config: EngineConfig;
-  /** Branch sway amplitude before any seasonal mood is applied. */
-  private baseBranchSway = 0;
-
   private layer: SpriteSurface;
   private layerCtx: Ctx2D;
 
@@ -117,7 +114,6 @@ export class Engine {
     this.petalColors = this.config.petalColors;
     this.palette = this.buildPalette();
 
-    this.baseBranchSway = this.config.branches.swayAmplitude;
     this.sprites = new PetalSpriteSet(this.config.petals);
     this.pool = new PetalPool(this.config.petals, this.config.seed);
     this.branches = new BranchSystem(this.config.branches, this.config.seed);
@@ -222,16 +218,10 @@ export class Engine {
     }
   }
 
-  /**
-   * Seasonal mood for the petals and branch sway (all multipliers, 1 = the
-   * signature look). Petals are rescaled in place; the branches pick up the new
-   * sway on their next repaint, so the change glides in rather than popping.
-   */
-  setMood(mood: { density: number; fall: number; sway: number; drift: number; branchSway: number }): void {
+  /** Petal density multiplier (1 = the signature look). */
+  setPetalDensity(density: number): void {
     if (this.destroyed) return;
-    this.pool.setMood(mood);
-    this.config.branches.swayAmplitude = this.baseBranchSway * mood.branchSway;
-    this.layerDirty = true;
+    this.pool.setDensity(density);
     if (!this.isRunning() && this.width > 0) this.draw();
   }
 

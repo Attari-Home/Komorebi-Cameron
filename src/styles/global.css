@@ -925,3 +925,54 @@ html.kc-wave::view-transition-new(root) {
 .faq-item[open] > p {
   animation: fade-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* Petal density slider (palette menu) */
+.density-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 1.5rem;
+  background: transparent;
+  cursor: pointer;
+}
+.density-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    rgb(var(--sakura-a)) var(--fill, 50%),
+    rgb(var(--fg) / 0.18) var(--fill, 50%)
+  );
+}
+.density-range::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgb(var(--fg) / 0.18);
+}
+.density-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgb(var(--sakura-a));
+}
+.density-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 1.1rem;
+  width: 1.1rem;
+  margin-top: -0.45rem;
+  border-radius: 9999px;
+  border: 0;
+  background: radial-gradient(circle at 30% 28%, #fff9 0%, transparent 45%), rgb(var(--sakura-a));
+  box-shadow: 0 0 14px -1px rgb(var(--sakura-a) / 0.8);
+}
+.density-range::-moz-range-thumb {
+  height: 1.1rem;
+  width: 1.1rem;
+  border: 0;
+  border-radius: 9999px;
+  background: rgb(var(--sakura-a));
+  box-shadow: 0 0 14px -1px rgb(var(--sakura-a) / 0.8);
+}
+.density-range:focus-visible {
+  outline: 2px solid rgb(var(--sakura-a));
+  outline-offset: 4px;
+  border-radius: 9999px;
+}

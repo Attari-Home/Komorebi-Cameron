@@ -54,16 +54,14 @@ export class PetalPool implements PetalBuffers {
   private height = 0;
   /** Upper bound set by the quality governor. */
   private ceiling: number;
-  /** Seasonal mood multipliers (1 = the signature look). See `setMood`. */
+  /** Visitor-chosen density multiplier (1 = the signature look). See `setDensity`. */
   private moodDensity = 1;
-  private moodFall = 1;
-  private moodSway = 1;
-  private moodDrift = 1;
   private dpr = 1;
 
   constructor(config: PetalConfig, seed: number) {
     this.config = config;
-    this.capacity = config.maxCount;
+    // Headroom above the signature count so the density control can go denser.
+    this.capacity = Math.ceil(config.maxCount * 2.2);
     this.ceiling = config.maxCount;
     this.rand = mulberry32(seed ^ 0x51ed270b);
 
@@ -96,8 +94,10 @@ export class PetalPool implements PetalBuffers {
     let n = ((width * height) / cfg.areaPerPetal) * this.moodDensity;
     if (width < 640) n *= 0.75; // small screens: fewer, less busy
     if (dpr > 1.75) n *= 0.9; // dense screens: fill-rate is costlier
-    const upper = Math.max(cfg.minCount, this.ceiling);
-    return clamp(Math.round(n), cfg.minCount, upper);
+    const d = this.moodDensity;
+    const upper = Math.max(cfg.minCount, this.ceiling) * Math.max(1, d);
+    const lower = d < 1 ? Math.max(6, Math.round(cfg.minCount * d)) : cfg.minCount;
+    return clamp(Math.round(n), lower, Math.min(this.capacity, Math.round(upper)));
   }
 
   /** Adapt to a new viewport size, preserving relative petal positions. */
@@ -134,22 +134,12 @@ export class PetalPool implements PetalBuffers {
   }
 
   /**
-   * Seasonal mood: scales petal density, fall speed, sway and wind relative to
-   * the signature look (all 1). Existing petals are rescaled in place so the
-   * change is felt immediately, with no respawn pop. Counts stay within
-   * [minCount, ceiling] like everything else.
+   * Petal density control: scales how many petals are in the air relative to
+   * the signature look (1). Petals are added or removed in place, so there is
+   * no respawn pop and no reallocation.
    */
-  setMood(mood: { density: number; fall: number; sway: number; drift: number }): void {
-    const fallRatio = mood.fall / this.moodFall;
-    const swayRatio = mood.sway / this.moodSway;
-    for (let i = 0; i < this.capacity; i++) {
-      this.fall[i] = this.fall[i]! * fallRatio;
-      this.swayAmp[i] = this.swayAmp[i]! * swayRatio;
-    }
-    this.moodDensity = mood.density;
-    this.moodFall = mood.fall;
-    this.moodSway = mood.sway;
-    this.moodDrift = mood.drift;
+  setDensity(density: number): void {
+    this.moodDensity = clamp(density, 0.1, 2.2);
     if (this.width > 0 && this.height > 0) {
       this.setActiveCount(this.computeTargetCount(this.width, this.height, this.dpr));
     }
@@ -158,7 +148,8 @@ export class PetalPool implements PetalBuffers {
   /** Quality governor hook: lower (or restore) the maximum active count. */
   setCeiling(ceiling: number): void {
     this.ceiling = clamp(Math.round(ceiling), this.config.minCount, this.capacity);
-    if (this.count > this.ceiling) this.count = this.ceiling;
+    const allowed = Math.round(this.ceiling * Math.max(1, this.moodDensity));
+    if (this.count > allowed) this.count = allowed;
   }
 
   // -------------------------------------------------------------------------
@@ -183,7 +174,7 @@ export class PetalPool implements PetalBuffers {
     const spinBoost = 1 + Math.abs(influence) * vr.spin;
     const follow = 1 - Math.exp(-cfg.inertia * dt);
     // Slowly breathing ambient wind so the field never feels mechanical.
-    const wind = cfg.driftSpeed * this.moodDrift * (0.6 + 0.4 * Math.sin(time * 0.13));
+    const wind = cfg.driftSpeed * (0.6 + 0.4 * Math.sin(time * 0.13));
 
     const { x, y, vx, vy, rot, vrot, flip, vflip, z, phase, swayFreq, swayAmp, fall } = this;
 
@@ -280,8 +271,8 @@ export class PetalPool implements PetalBuffers {
 
     this.phase[i] = rand() * Math.PI * 2;
     this.swayFreq[i] = randRange(rand, cfg.swayFrequency[0], cfg.swayFrequency[1]);
-    this.swayAmp[i] = randRange(rand, cfg.swayAmplitude[0], cfg.swayAmplitude[1]) * this.moodSway;
-    this.fall[i] = randRange(rand, cfg.fallSpeed[0], cfg.fallSpeed[1]) * this.moodFall;
+    this.swayAmp[i] = randRange(rand, cfg.swayAmplitude[0], cfg.swayAmplitude[1]);
+    this.fall[i] = randRange(rand, cfg.fallSpeed[0], cfg.fallSpeed[1]);
 
     this.rot[i] = rand() * Math.PI * 2;
     this.vrot[i] = randRange(rand, cfg.spinSpeed[0], cfg.spinSpeed[1]) * (rand() < 0.5 ? -1 : 1);

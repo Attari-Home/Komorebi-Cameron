@@ -70,6 +70,7 @@ export const SITE = {
     { label: 'Process', href: '#process' },
     { label: 'Impact', href: '#impact' },
     { label: 'Pricing', href: '#pricing' },
+    { label: 'FAQ', href: '#faq' },
     { label: 'Contact', href: '#contact' },
   ],
 

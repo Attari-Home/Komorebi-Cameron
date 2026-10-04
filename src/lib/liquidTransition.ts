@@ -2,8 +2,8 @@
  * Liquid theme transition: a waterfall that rewrites the page as it falls.
  *
  * Whenever the theme (dark/light) or the petal palette changes, one sheet of
- * water pours down the viewport in a single continuous motion: a wavy front
- * with long drips running ahead of it, glossy flow streaks, foam and spray.
+ * water pours down the viewport in a single continuous motion: a smooth,
+ * low-frequency swell (2 to 3 wide crests) with glossy flow streaks and a foam rim.
  *
  * How the theme changes "as it flows" (the best path, used wherever the View
  * Transitions API exists):
@@ -222,10 +222,10 @@ const luminance = (c: Rgb): number => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * 
 /* Water geometry                                                              */
 /* -------------------------------------------------------------------------- */
 
-const REVEAL_MS = 1800;
-const COVER_MS = 2000;
+const REVEAL_MS = 950;
+const COVER_MS = 1050;
 /** Horizontal sampling step of the front, in CSS px. */
-const STEP = 6;
+const STEP = 10;
 const MAX_DPR = 1.75;
 
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -234,11 +234,11 @@ const smooth = (t: number): number => {
   return c * c * (3 - 2 * c);
 };
 
-/**
- * Falling-water easing: it starts gently, gathers speed, and ends fast, so the
- * sheet feels like it is pulled down by gravity rather than slid by a tween.
- */
-const fall = (p: number): number => 0.5 * smooth(p) + 0.5 * p * p;
+/** easeInOutCubic: the sheet starts softly, sweeps, and settles. */
+const fall = (p: number): number => {
+  const c = clamp01(p);
+  return c < 0.5 ? 4 * c * c * c : 1 - Math.pow(-2 * c + 2, 3) / 2;
+};
 
 interface Drip {
   /** Horizontal centre as a fraction of the viewport width. */
@@ -251,19 +251,9 @@ interface Drip {
   delay: number;
 }
 
-function makeDrips(w: number): Drip[] {
-  const count = Math.max(6, Math.round(w / 90));
-  const drips: Drip[] = [];
-  for (let i = 0; i < count; i++) {
-    const cell = (i + Math.random() * 0.8 + 0.1) / count;
-    drips.push({
-      xf: cell,
-      half: 20 + Math.random() * 44,
-      len: 0.05 + Math.pow(Math.random(), 1.5) * 0.22,
-      delay: Math.random() * 0.22,
-    });
-  }
-  return drips;
+/** The front is a clean swell now; kept as an (empty) list so callers stay simple. */
+function makeDrips(_w: number): Drip[] {
+  return [];
 }
 
 interface Geometry {
@@ -285,8 +275,8 @@ function makeGeometry(w: number, h: number): Geometry {
   return {
     w,
     h,
-    amp: Math.min(Math.max(h * 0.035, 14), 38),
-    maxDrip: h * 0.28,
+    amp: Math.min(Math.max(h * 0.04, 20), 36),
+    maxDrip: 0,
     n,
     xs: new Float32Array(n),
     lead: new Float32Array(n),
@@ -309,32 +299,20 @@ function shapeEdge(
   phaseOffset: number,
 ): void {
   const { w, h, amp, n, xs } = g;
-  const k1 = (Math.PI * 2) / (w * 0.42);
-  const k2 = (Math.PI * 2) / (w * 0.19);
-  const k3 = (Math.PI * 2) / (w * 0.083);
+  // Two long, slow harmonics: about 2 to 3 wide crests across the screen and
+  // a peak-to-peak swell of at most ~2 * amp (<= 72px). No sharp terms.
+  const k1 = (Math.PI * 2) / (w * 0.46);
+  const k2 = (Math.PI * 2) / (w * 0.93);
+  void h;
+  void p;
+  void drips;
+  void dripScale;
 
   for (let i = 0; i < n; i++) {
     const x = Math.min(w, i * STEP);
     xs[i] = x;
     const ph = phase + phaseOffset;
-    let y =
-      Y +
-      amp *
-        (0.5 * Math.sin(x * k1 + ph) +
-          0.3 * Math.sin(x * k2 - ph * 1.4 + 1.1) +
-          0.2 * Math.sin(x * k3 + ph * 2.3 + 2.3));
-
-    let drip = 0;
-    for (let d = 0; d < drips.length; d++) {
-      const dr = drips[d]!;
-      const u = Math.abs(x - dr.xf * w) / dr.half;
-      if (u >= 1) continue;
-      const grow = smooth((p - dr.delay) / 0.38);
-      const profile = Math.pow(1 - u * u, 1.15);
-      const len = dr.len * h * dripScale * grow * profile;
-      if (len > drip) drip = len;
-    }
-    out[i] = y + drip;
+    out[i] = Y + amp * (0.68 * Math.sin(x * k1 + ph) + 0.32 * Math.sin(x * k2 - ph * 0.7 + 1.3));
   }
 }
 
@@ -459,7 +437,7 @@ function createRenderer(canvas: HTMLCanvasElement): Renderer {
 
       const g = geo;
       const { amp, maxDrip, n, xs, lead, trail } = g;
-      const phase = elapsed * 0.0046;
+      const phase = elapsed * 0.0042;
       const e = fall(p);
 
       // The cover fallback needs a band tall enough to blanket the screen.

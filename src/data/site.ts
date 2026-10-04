@@ -7,9 +7,9 @@ export const SITE = {
   legalName: 'Komorebi Cameron',
   url: 'https://komorebicameron.com',
   tagline: 'Web Architecture & Creative Engineering',
-  title: 'Komorebi Cameron — Luxury Web Development & Creative Engineering Studio',
+  title: 'Komorebi Cameron | Luxury Web Development & Creative Studio',
   description:
-    'Komorebi Cameron is a luxury web development and creative engineering studio crafting unforgettable digital experiences: bespoke websites, canvas graphics, and performance-first SEO architecture.',
+    'Luxury web development and creative engineering studio. Bespoke Astro sites, custom canvas and WebGL, 100/100 Core Web Vitals. 100% async, from $2,500.',
   locale: 'en_US',
   themeColor: '#0A0A0C',
   ogImage: '/og/og-default.jpg',
@@ -26,14 +26,51 @@ export const SITE = {
      * email client with the message pre-filled instead.
      */
     formEndpoint: '',
-    responseTime: 'within one business day',
+    /** Public response-time promise. The studio is 100% asynchronous. */
+    responseWindow: 'Within 7 days',
+    /** Communication preferences offered on the contact form. Never calls. */
+    channels: [
+      { value: 'email', label: 'Email' },
+      { value: 'discord', label: 'Discord' },
+      { value: 'text', label: 'Text' },
+    ],
   },
+
+  /** Studio promises shown in the TrustBar. */
+  trustPoints: [
+    {
+      id: 'async',
+      icon: 'chat',
+      title: '100% Async & Text-First',
+      detail: 'Zero calls or phone meetings.',
+    },
+    {
+      id: 'review',
+      icon: 'clock',
+      title: '7-Day Technical Review',
+      detail: 'An in-depth technical review window for every inquiry.',
+    },
+    {
+      id: 'vitals',
+      icon: 'gauge',
+      title: '100/100 Core Web Vitals',
+      detail: 'A performance guarantee, not a target.',
+    },
+    {
+      id: 'ownership',
+      icon: 'shield',
+      title: '100% Codebase & IP Ownership',
+      detail: 'Complete handover. Everything we build is yours.',
+    },
+  ],
 
   nav: [
     { label: 'Manifesto', href: '#manifesto' },
     { label: 'Services', href: '#services' },
     { label: 'Process', href: '#process' },
     { label: 'Impact', href: '#impact' },
+    { label: 'Pricing', href: '#pricing' },
+    { label: 'FAQ', href: '#faq' },
     { label: 'Contact', href: '#contact' },
   ],
 

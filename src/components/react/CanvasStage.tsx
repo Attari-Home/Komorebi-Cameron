@@ -3,6 +3,7 @@ import { Engine } from '../../engine/Engine';
 import { getCurrentPaletteId, onPaletteChange, resolvePetalColors } from '../../lib/petalPalette';
 import { scrollBus } from '../../lib/scrollBus';
 import { getCurrentTheme, onThemeChange } from '../../lib/theme';
+import { getPetalDensity, onPetalDensityChange } from '../../lib/petalDensity';
 
 /**
  * Mounts the canvas engine as a fixed, full-viewport layer behind the page.
@@ -67,6 +68,10 @@ export default function CanvasStage() {
     const offTheme = onThemeChange(applyAppearance);
     const offPalette = onPaletteChange(applyAppearance);
 
+    // Petal density control (100% is the signature look).
+    engine.setPetalDensity(getPetalDensity() / 100);
+    const offDensity = onPetalDensityChange((percent) => engine.setPetalDensity(percent / 100));
+
     const onMotionChange = (event: MediaQueryListEvent) => engine.setReducedMotion(event.matches);
     motionQuery.addEventListener('change', onMotionChange);
 
@@ -77,6 +82,7 @@ export default function CanvasStage() {
       resizeObserver.disconnect();
       offTheme();
       offPalette();
+      offDensity();
       motionQuery.removeEventListener('change', onMotionChange);
       engine.destroy();
     };

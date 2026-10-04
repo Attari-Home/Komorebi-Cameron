@@ -60,7 +60,6 @@ export class Engine {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
   private readonly config: EngineConfig;
-
   private layer: SpriteSurface;
   private layerCtx: Ctx2D;
 
@@ -217,6 +216,13 @@ export class Engine {
       this.layerDirty = true;
       if (!this.isRunning()) this.draw();
     }
+  }
+
+  /** Petal density multiplier (1 = the signature look). */
+  setPetalDensity(density: number): void {
+    if (this.destroyed) return;
+    this.pool.setDensity(density);
+    if (!this.isRunning() && this.width > 0) this.draw();
   }
 
   /** Enable or disable reduced-motion mode (static composition, no loop). */

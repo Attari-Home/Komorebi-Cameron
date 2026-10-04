@@ -25,7 +25,7 @@ export const PROCESS_STEPS = [
     title: 'Discovery',
     summary: 'We listen first: goals, audience, constraints, ambition.',
     description:
-      'We begin with conversation, not a template. Stakeholder interviews, competitor and audience research, and a technical audit define what the site must achieve and what will make it memorable.',
+      'We begin by listening, in writing, not with a template. Written stakeholder briefs, competitor and audience research, and a technical audit define what the site must achieve and what will make it memorable.',
     deliverables: ['Creative and technical brief', 'Audience and competitor insights', 'Scope, timeline and success metrics'],
     duration: '1 – 2 weeks',
   },

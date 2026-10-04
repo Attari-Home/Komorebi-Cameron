@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getCurrentTheme, onThemeChange, toggleTheme, type Theme } from '../../lib/theme';
+import { getCurrentTheme, onThemeChange, type Theme } from '../../lib/theme';
+import { toggleThemeLiquid } from '../../lib/liquidTransition';
 
 /**
  * Dark / light mode toggle.
+ *
+ * Switching runs the liquid wave transition (src/lib/liquidTransition.ts).
  *
  * Hydrated with `client:only="react"`, so `window` and `document` always exist
  * when this component first renders and the inline head script has already
@@ -18,8 +21,10 @@ export default function ThemeToggle() {
     return onThemeChange(setThemeState);
   }, []);
 
+  // The liquid wave swaps the theme beneath itself; the icon follows through
+  // `onThemeChange` at that moment (or instantly with reduced motion).
   const handleClick = useCallback(() => {
-    setThemeState(toggleTheme());
+    toggleThemeLiquid();
   }, []);
 
   const isDark = theme === 'dark';

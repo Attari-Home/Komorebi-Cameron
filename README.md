@@ -27,6 +27,9 @@ Requires Node 18.20+ (Node 20+ recommended).
 - **Petal palettes**: Sakura Pink, Golden Komorebi, Velvet Magenta, Pure Ghost White. A palette drives the canvas petals *and* the UI accent tokens (`--sakura-a`, `--sakura-b`, `--accent-glow`, `--text-accent`, `--border-accent`), including the footer landscape. Light-mode variants are tuned for at least 4.5:1 text contrast. Stored as `kc-petal-palette`.
 - **Canvas engine** (`src/engine/`): typed-array petal pool, pre-rendered sprites, seeded branch generation with wind sway, adaptive quality governor, pauses when hidden. Mobile uses a lean config (30 to 40 petals).
 - **Guide Petal**: a petal with spring physics that drifts down the side gutters beside the content, trailing a hairline light thread. It switches sides twice per page and never crosses text.
+- **Liquid theme transition** (`src/lib/liquidTransition.ts`, `LiquidThemeTransition.tsx`): switching theme or petal palette sweeps a diagonal liquid wave across the screen on a single canvas; the CSS variables swap beneath it while the viewport is fully covered. Respects `prefers-reduced-motion` (instant swap).
+- **Pricing tiers** (`src/data/pricing.ts`, `Pricing.astro`): three glass cards driven by the active palette. Choosing a package smooth-scrolls to the contact form, pre-selects it in the Package dropdown and makes the form glow (`src/lib/packageSelection.ts`).
+- **100% async lead capture**: Email / Discord / Text preference (no calls), 7-day response window (`SITE.contact.responseWindow`), and a `TrustBar` of the studio's promises (`SITE.trustPoints`).
 - **Cursor-proximity text** glow, glass button and card system, animated stat counters, process timeline, contact form with validation and honeypot.
 - **Accessibility and performance**: reduced-motion fallbacks, 44px touch targets, skip link, font preloads, JSON-LD (`ProfessionalService`), sitemap, Open Graph image.
 
@@ -34,11 +37,11 @@ Requires Node 18.20+ (Node 20+ recommended).
 
 ```
 src/
-  components/astro/   Static sections: Header, Hero, Manifesto, Services, Process, Impact, Contact, Footer
-  components/react/   Islands: CanvasStage, GuidePetal, ThemeToggle, PaletteSelector, ContactForm, SmoothScrollProvider
+  components/astro/   Static sections: Header, Hero, TrustBar, Manifesto, Services, Process, Impact, Pricing, Contact, Footer
+  components/react/   Islands: CanvasStage, GuidePetal, ThemeToggle, PaletteSelector, LiquidThemeTransition, ContactForm, SmoothScrollProvider
   engine/             Framework-agnostic canvas engine
-  data/               site.ts (SEO and contact), content.ts (copy), petalPalettes.ts
-  lib/                theme, palette and scroll-state helpers
+  data/               site.ts (SEO, contact, trust points), content.ts (copy), pricing.ts, petalPalettes.ts
+  lib/                theme, palette, liquid transition, package selection and scroll-state helpers
   scripts/            proximity, reveal and enhance scripts
   styles/global.css   Tokens, glass system, footer landscape styles
 public/

@@ -1,0 +1,28 @@
+# Komorebi Cameron
+
+> Luxury web development and creative engineering studio. Bespoke Astro websites, custom 2D/3D canvas and WebGL experiences, and performance-first architecture with a 100/100 Core Web Vitals guarantee. The studio works 100% asynchronously: email, Discord or text, never calls.
+
+Komorebi (木漏れ日) is the Japanese word for sunlight filtering through the leaves of trees. The site's visual identity, a sumi-e ink-wash landscape with a procedural sakura branch and falling petals, is built on that idea.
+
+## Services
+
+- Bespoke Web Engineering: hand-built sites and web apps (Astro, React, TypeScript), accessible by default (WCAG 2.2 AA).
+- Creative WebGL & Canvas Graphics: generative visuals, particle systems and scroll-driven storytelling.
+- Performance & SEO Architecture: static-first delivery, Core Web Vitals engineering, structured data.
+
+## Packages (starting prices, USD)
+
+- Essential Web Architecture, from $2,500: single-page Astro platform, sub-second LCP, 100/100 Core Web Vitals guarantee.
+- Bespoke Canvas Platform, from $5,000: multi-page architecture, custom 2D/3D canvas engine, Lenis scroll physics, headless CMS integration.
+- Enterprise Creative Engine, from $10,000: custom WebGL shaders, multi-palette dynamic theme engine, edge infrastructure and SLA support.
+
+## Working with the studio
+
+- 100% async and text-first: zero calls or phone meetings.
+- Every inquiry receives an in-depth technical review; response window is within 7 days.
+- Clients receive 100% of the codebase and all intellectual property at handover.
+
+## Links
+
+- Home: https://attari-home.github.io/Komorebi-Cameron/
+- Sitemap: https://attari-home.github.io/Komorebi-Cameron/sitemap-index.xml

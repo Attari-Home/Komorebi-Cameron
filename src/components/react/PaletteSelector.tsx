@@ -4,19 +4,37 @@ import {
   getCurrentPaletteId,
   getPaletteDefinition,
   onPaletteChange,
-  setPetalPalette,
 } from '../../lib/petalPalette';
+import { transitionPalette } from '../../lib/liquidTransition';
+import {
+  DENSITY_DEFAULT,
+  DENSITY_MAX,
+  DENSITY_MIN,
+  DENSITY_STEP,
+  getPetalDensity,
+  onPetalDensityChange,
+  setPetalDensity,
+} from '../../lib/petalDensity';
+
+function densityLabel(percent: number): string {
+  if (percent <= 30) return 'Sparse';
+  if (percent < 90) return 'Light';
+  if (percent <= 110) return 'Signature';
+  if (percent <= 150) return 'Lush';
+  return 'Blizzard';
+}
 
 /**
  * Petal colour selector for the header.
  *
  * A glass icon button showing the current swatch opens a small radio-group
- * popover. Choosing a palette calls `setPetalPalette`, which the canvas
+ * popover. Choosing a palette runs the liquid wave transition, which applies the palette; the canvas
  * engine and guide petal listen for and restyle instantly.
  */
 export default function PaletteSelector() {
   const [id, setId] = useState<PetalPaletteId>(() => getCurrentPaletteId());
   const [open, setOpen] = useState(false);
+  const [density, setDensity] = useState<number>(() => getPetalDensity());
 
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -25,7 +43,13 @@ export default function PaletteSelector() {
 
   useEffect(() => {
     setId(getCurrentPaletteId());
-    return onPaletteChange(setId);
+    const offPalette = onPaletteChange(setId);
+    setDensity(getPetalDensity());
+    const offDensity = onPetalDensityChange(setDensity);
+    return () => {
+      offPalette();
+      offDensity();
+    };
   }, []);
 
   // Close on outside click / Escape.
@@ -62,9 +86,10 @@ export default function PaletteSelector() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // The liquid wave applies the palette beneath itself; the selected state
+  // follows through `onPaletteChange` at that moment.
   const choose = useCallback((next: PetalPaletteId) => {
-    setPetalPalette(next);
-    setId(next);
+    transitionPalette(next);
   }, []);
 
   const onOptionKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -110,7 +135,8 @@ export default function PaletteSelector() {
           id={menuId}
           role="radiogroup"
           aria-label="Petal colour"
-          className="glass-strong !bg-bg/80 absolute right-0 top-[calc(100%+0.75rem)] z-50 w-72 animate-fade-rise rounded-3xl p-2"
+          className="glass-strong absolute right-0 top-[calc(100%+0.75rem)] z-50 w-72 animate-fade-rise rounded-3xl p-2"
+          style={{ background: "rgb(var(--bg) / 0.96)" }}
         >
           {PETAL_PALETTES.map((palette, index) => {
             const selected = palette.id === id;
@@ -162,6 +188,44 @@ export default function PaletteSelector() {
               </button>
             );
           })}
+
+          <div className="mx-2 mt-2 border-t border-line/10 pt-3 pb-1">
+            <div className="flex items-baseline justify-between px-1">
+              <label
+                htmlFor={`${menuId}-density`}
+                className="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-fg-muted"
+              >
+                Petal density
+              </label>
+              <span className="text-xs font-semibold tabular-nums text-sakura-a" aria-live="polite">
+                {densityLabel(density)} · {density}%
+              </span>
+            </div>
+            <input
+              id={`${menuId}-density`}
+              type="range"
+              min={DENSITY_MIN}
+              max={DENSITY_MAX}
+              step={DENSITY_STEP}
+              value={density}
+              onChange={(e) => setPetalDensity(Number(e.target.value))}
+              aria-valuetext={`${densityLabel(density)}, ${density} percent`}
+              className="density-range mt-3 w-full"
+              style={{ ['--fill' as string]: `${((density - DENSITY_MIN) / (DENSITY_MAX - DENSITY_MIN)) * 100}%` }}
+            />
+            <div className="mt-2 flex items-center justify-between px-1 text-[0.65rem] text-fg-muted">
+              <span>Fewer</span>
+              <button
+                type="button"
+                onClick={() => setPetalDensity(DENSITY_DEFAULT)}
+                disabled={density === DENSITY_DEFAULT}
+                className="rounded-full px-2 py-1 font-semibold uppercase tracking-[0.16em] transition-colors hover:text-fg disabled:opacity-40"
+              >
+                Reset
+              </button>
+              <span>More</span>
+            </div>
+          </div>
         </div>
       )}
     </div>

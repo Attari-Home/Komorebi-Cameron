@@ -54,10 +54,14 @@ export class PetalPool implements PetalBuffers {
   private height = 0;
   /** Upper bound set by the quality governor. */
   private ceiling: number;
+  /** Visitor-chosen density multiplier (1 = the signature look). See `setDensity`. */
+  private moodDensity = 1;
+  private dpr = 1;
 
   constructor(config: PetalConfig, seed: number) {
     this.config = config;
-    this.capacity = config.maxCount;
+    // Headroom above the signature count so the density control can go denser.
+    this.capacity = Math.ceil(config.maxCount * 2.2);
     this.ceiling = config.maxCount;
     this.rand = mulberry32(seed ^ 0x51ed270b);
 
@@ -87,11 +91,13 @@ export class PetalPool implements PetalBuffers {
   /** Petal count appropriate for a viewport, clamped to [minCount, ceiling]. */
   computeTargetCount(width: number, height: number, dpr: number): number {
     const cfg = this.config;
-    let n = (width * height) / cfg.areaPerPetal;
+    let n = ((width * height) / cfg.areaPerPetal) * this.moodDensity;
     if (width < 640) n *= 0.75; // small screens: fewer, less busy
     if (dpr > 1.75) n *= 0.9; // dense screens: fill-rate is costlier
-    const upper = Math.max(cfg.minCount, this.ceiling);
-    return clamp(Math.round(n), cfg.minCount, upper);
+    const d = this.moodDensity;
+    const upper = Math.max(cfg.minCount, this.ceiling) * Math.max(1, d);
+    const lower = d < 1 ? Math.max(6, Math.round(cfg.minCount * d)) : cfg.minCount;
+    return clamp(Math.round(n), lower, Math.min(this.capacity, Math.round(upper)));
   }
 
   /** Adapt to a new viewport size, preserving relative petal positions. */
@@ -100,6 +106,7 @@ export class PetalPool implements PetalBuffers {
     const prevH = this.height;
     this.width = width;
     this.height = height;
+    this.dpr = dpr;
 
     const target = this.computeTargetCount(width, height, dpr);
 
@@ -126,10 +133,23 @@ export class PetalPool implements PetalBuffers {
     this.count = target;
   }
 
+  /**
+   * Petal density control: scales how many petals are in the air relative to
+   * the signature look (1). Petals are added or removed in place, so there is
+   * no respawn pop and no reallocation.
+   */
+  setDensity(density: number): void {
+    this.moodDensity = clamp(density, 0.1, 2.2);
+    if (this.width > 0 && this.height > 0) {
+      this.setActiveCount(this.computeTargetCount(this.width, this.height, this.dpr));
+    }
+  }
+
   /** Quality governor hook: lower (or restore) the maximum active count. */
   setCeiling(ceiling: number): void {
     this.ceiling = clamp(Math.round(ceiling), this.config.minCount, this.capacity);
-    if (this.count > this.ceiling) this.count = this.ceiling;
+    const allowed = Math.round(this.ceiling * Math.max(1, this.moodDensity));
+    if (this.count > allowed) this.count = allowed;
   }
 
   // -------------------------------------------------------------------------

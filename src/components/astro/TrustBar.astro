@@ -1,39 +1,171 @@
 ---
 /**
- * TrustBar.astro: the studio's four promises in one glass strip.
- * Copy lives in `SITE.trustPoints` (src/data/site.ts).
+ * TrustBar.astro: the studio's four promises in one glass strip, plus a live
+ * Core Web Vitals readout measured in the visitor's own browser.
+ * Copy lives in `SITE.trustPoints` (src/data/site.ts). Icons are the same
+ * line-icon family as the Services cards (no emoji, so it follows the theme).
  */
 import Container from './Container.astro';
 import { SITE } from '../../data/site';
+
+const icons: Record<string, string> = {
+  chat: 'M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM8 9h8M8 13h5',
+  clock: 'M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
+  gauge: 'M12 14l4-4M3.34 19a10 10 0 1 1 17.32 0',
+  shield: 'M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6zM9 12l2 2 4-4',
+};
 ---
 
 <section aria-label="Studio guarantees" class="relative py-10 lg:py-14">
   <Container>
-    <ul class="trust-bar glass-strong grid overflow-hidden rounded-[2rem] sm:grid-cols-2 lg:grid-cols-4" data-reveal>
-      {
-        SITE.trustPoints.map((point, i) => (
-          <li
-            class:list={[
-              'trust-item group relative flex items-start gap-4 p-6 sm:p-7',
-              i > 0 && 'border-t border-line/10 sm:border-t-0',
-              i % 2 === 1 && 'sm:border-l sm:border-line/10',
-              i >= 2 && 'sm:border-t sm:border-line/10 lg:border-t-0',
-              i > 0 && 'lg:border-l lg:border-line/10',
-            ]}
-          >
-            <span
-              aria-hidden="true"
-              class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-sakura-a/30 bg-sakura-a/10 text-xl leading-none shadow-glow-sm transition-transform duration-500 ease-out-expo group-hover:-translate-y-0.5 group-hover:scale-110"
+    <div class="trust-bar glass-strong overflow-hidden rounded-[2rem]" data-reveal data-spotlight>
+      <span class="spot" aria-hidden="true"></span>
+      <ul class="grid sm:grid-cols-2 lg:grid-cols-4">
+        {
+          SITE.trustPoints.map((point, i) => (
+            <li
+              class:list={[
+                'trust-item group relative flex items-start gap-4 p-6 sm:p-8',
+                i > 0 && 'border-t border-line/10 sm:border-t-0',
+                i % 2 === 1 && 'sm:border-l sm:border-line/10',
+                i >= 2 && 'sm:border-t sm:border-line/10 lg:border-t-0',
+                i > 0 && 'lg:border-l lg:border-line/10',
+              ]}
             >
-              {point.icon}
-            </span>
-            <div class="min-w-0">
-              <p class="i-text text-balance text-sm font-semibold leading-snug">{point.title}</p>
-              <p class="i-text i-text-muted mt-1 text-sm leading-relaxed">{point.detail}</p>
-            </div>
-          </li>
-        ))
-      }
-    </ul>
+              <span
+                aria-hidden="true"
+                class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-sakura-a/30 bg-sakura-a/10 text-sakura-a transition-transform duration-500 ease-out-expo group-hover:-translate-y-0.5 group-hover:rotate-3 group-hover:scale-110"
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d={icons[point.icon]} />
+                </svg>
+              </span>
+              <div class="min-w-0">
+                <p class="i-text text-balance text-[0.95rem] font-semibold leading-snug">{point.title}</p>
+                <p class="i-text i-text-muted mt-1.5 text-sm leading-relaxed">{point.detail}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+
+      <!-- Live vitals: hidden unless this browser can measure them. -->
+      <div
+        hidden
+        data-vitals
+        class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-line/10 px-6 py-4 text-xs sm:px-8"
+      >
+        <p class="flex items-center gap-2.5 font-medium uppercase tracking-[0.2em] text-fg-muted">
+          <span aria-hidden="true" class="vitals-dot h-2 w-2 rounded-full bg-sakura-a shadow-glow-sm"></span>
+          Measured live in your browser
+        </p>
+        <p class="flex flex-wrap items-center gap-x-5 gap-y-1 tabular-nums text-fg-muted" aria-live="off">
+          <span>LCP <strong class="font-semibold text-fg" data-vitals-lcp>measuring…</strong></span>
+          <span>CLS <strong class="font-semibold text-fg" data-vitals-cls>0.000</strong></span>
+          <span
+            class="rounded-full border border-sakura-a/40 bg-sakura-a/10 px-3 py-1 font-semibold tracking-wide text-sakura-a"
+            data-vitals-rating
+          >
+            Measuring
+          </span>
+        </p>
+      </div>
+    </div>
   </Container>
 </section>
+
+<script>
+  /**
+   * Live Core Web Vitals, straight from the browser's own performance entries
+   * (Largest Contentful Paint and Cumulative Layout Shift). Nothing is sent
+   * anywhere. Browsers that cannot report them (e.g. Safari) never see the row.
+   */
+  const row = document.querySelector<HTMLElement>('[data-vitals]');
+  const lcpEl = document.querySelector<HTMLElement>('[data-vitals-lcp]');
+  const clsEl = document.querySelector<HTMLElement>('[data-vitals-cls]');
+  const ratingEl = document.querySelector<HTMLElement>('[data-vitals-rating]');
+
+  const supported =
+    'PerformanceObserver' in window &&
+    (PerformanceObserver.supportedEntryTypes ?? []).includes('largest-contentful-paint');
+
+  if (row && lcpEl && clsEl && ratingEl && supported) {
+    row.hidden = false;
+
+    let lcp = 0;
+    let cls = 0;
+    let sessionValue = 0;
+    let sessionEntries: number[] = [];
+    let final = false;
+
+    const rate = (): string => {
+      if (lcp === 0) return 'Measuring';
+      if (lcp <= 2500 && cls <= 0.1) return final ? 'Good' : 'Good so far';
+      if (lcp <= 4000 && cls <= 0.25) return 'Needs work';
+      return 'Poor';
+    };
+
+    const render = (): void => {
+      lcpEl.textContent = lcp > 0 ? `${(lcp / 1000).toFixed(2)} s` : 'measuring…';
+      clsEl.textContent = cls.toFixed(3);
+      ratingEl.textContent = rate();
+    };
+
+    const lcpObserver = new PerformanceObserver((list) => {
+      const entries = list.getEntries();
+      const last = entries[entries.length - 1];
+      if (last) lcp = last.startTime;
+      render();
+    });
+    lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
+
+    let clsObserver: PerformanceObserver | null = null;
+    if ((PerformanceObserver.supportedEntryTypes ?? []).includes('layout-shift')) {
+      clsObserver = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries() as Array<PerformanceEntry & { value: number; hadRecentInput: boolean }>) {
+          if (entry.hadRecentInput) continue;
+          // Session windows: <= 1s gap, <= 5s long. CLS is the worst window.
+          const first = sessionEntries[0];
+          const lastT = sessionEntries[sessionEntries.length - 1];
+          if (sessionEntries.length && entry.startTime - (lastT ?? 0) < 1000 && entry.startTime - (first ?? 0) < 5000) {
+            sessionValue += entry.value;
+          } else {
+            sessionValue = entry.value;
+            sessionEntries = [];
+          }
+          sessionEntries.push(entry.startTime);
+          cls = Math.max(cls, sessionValue);
+        }
+        render();
+      });
+      clsObserver.observe({ type: 'layout-shift', buffered: true });
+    }
+
+    // LCP is final once the visitor interacts or leaves; stop observing then.
+    const settle = (): void => {
+      if (final) return;
+      final = true;
+      lcpObserver.takeRecords();
+      lcpObserver.disconnect();
+      render();
+    };
+    for (const type of ['keydown', 'pointerdown'] as const) {
+      addEventListener(type, settle, { once: true, passive: true });
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') settle();
+    });
+
+    render();
+  }
+</script>

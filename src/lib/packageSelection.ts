@@ -21,6 +21,8 @@ export interface PackageChangeDetail {
   id: PackageChoice;
   /** True when the change came from a pricing CTA and the form should draw the eye. */
   highlight: boolean;
+  /** Optional text to add to the message box (the estimator's summary). */
+  note?: string;
 }
 
 const GLOBAL_KEY = Symbol.for('komorebi.packageSelection');
@@ -41,12 +43,15 @@ export function getSelectedPackage(): PackageChoice {
 }
 
 /** Record a selection and notify listeners (pricing cards, contact form). */
-export function setSelectedPackage(id: PackageChoice, options: { highlight?: boolean } = {}): void {
+export function setSelectedPackage(
+  id: PackageChoice,
+  options: { highlight?: boolean; note?: string } = {},
+): void {
   getStore().id = id;
   if (typeof window === 'undefined') return;
   window.dispatchEvent(
     new CustomEvent<PackageChangeDetail>(PACKAGE_CHANGE_EVENT, {
-      detail: { id, highlight: options.highlight ?? false },
+      detail: { id, highlight: options.highlight ?? false, note: options.note },
     }),
   );
 }
@@ -60,4 +65,26 @@ export function onPackageChange(listener: (detail: PackageChangeDetail) => void)
   };
   window.addEventListener(PACKAGE_CHANGE_EVENT, handle);
   return () => window.removeEventListener(PACKAGE_CHANGE_EVENT, handle);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Recommendation (from the estimator): highlights a card without selecting it */
+/* -------------------------------------------------------------------------- */
+
+export const RECOMMEND_EVENT = 'kc:recommend';
+
+/** Mark a tier as "recommended for you" on the pricing cards (null clears it). */
+export function setRecommendedPackage(id: PackageChoice | null): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent<PackageChoice | null>(RECOMMEND_EVENT, { detail: id }));
+}
+
+export function onRecommendedPackage(listener: (id: PackageChoice | null) => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const handle = (event: Event) => {
+    const detail = (event as CustomEvent<PackageChoice | null>).detail;
+    listener(detail === null || isPackageChoice(detail) ? detail : null);
+  };
+  window.addEventListener(RECOMMEND_EVENT, handle);
+  return () => window.removeEventListener(RECOMMEND_EVENT, handle);
 }

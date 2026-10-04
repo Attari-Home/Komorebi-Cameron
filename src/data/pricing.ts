@@ -84,6 +84,8 @@ export type PackageChoice = PricingTierId | typeof PACKAGE_UNDECIDED;
 export interface PackageOption {
   value: PackageChoice;
   label: string;
+  /** Short secondary text (the starting price). */
+  hint?: string;
 }
 
 /** Options for the contact form's Package / Budget dropdown. */
@@ -91,9 +93,69 @@ export const PACKAGE_OPTIONS: readonly PackageOption[] = [
   { value: PACKAGE_UNDECIDED, label: 'Not sure yet, advise me' },
   ...PRICING_TIERS.map((tier) => ({
     value: tier.id,
-    label: `${tier.name} (${tier.priceLabel})`,
+    label: tier.name,
+    hint: tier.priceLabel,
   })),
 ];
 
+/** Plain-text label for emails and form payloads, e.g. "Bespoke Canvas Platform ($5,000+)". */
+export function packageLabel(choice: PackageChoice): string {
+  const option = PACKAGE_OPTIONS.find((o) => o.value === choice);
+  if (!option) return '';
+  return option.hint ? `${option.label} (${option.hint})` : option.label;
+}
+
 export const PRICING_NOTE =
   'Starting prices in USD. Every project is scoped in writing, entirely asynchronously, before any work begins.';
+
+/* -------------------------------------------------------------------------- */
+/* Estimator                                                                   */
+/* -------------------------------------------------------------------------- */
+
+export interface EstimatorFeature {
+  id: string;
+  label: string;
+  group: 'experience' | 'engineering';
+  /** The lowest tier that includes this feature. */
+  tier: PricingTierId;
+}
+
+export const ESTIMATOR_FEATURES = [
+  { id: 'multipage', label: 'Multi-page architecture', group: 'experience', tier: 'bespoke' },
+  { id: 'canvas', label: 'Custom 2D/3D Canvas engine', group: 'experience', tier: 'bespoke' },
+  { id: 'scroll', label: 'Lenis scroll physics', group: 'experience', tier: 'bespoke' },
+  { id: 'cms', label: 'Headless CMS integration', group: 'experience', tier: 'bespoke' },
+  { id: 'webgl', label: 'Custom WebGL shaders', group: 'engineering', tier: 'enterprise' },
+  { id: 'themes', label: 'Multi-palette dynamic theme engine', group: 'engineering', tier: 'enterprise' },
+  { id: 'edge', label: 'Edge infrastructure & SLA support', group: 'engineering', tier: 'enterprise' },
+] as const satisfies readonly EstimatorFeature[];
+
+const TIER_RANK: Record<PricingTierId, number> = { essential: 0, bespoke: 1, enterprise: 2 };
+
+/** The smallest tier that covers every selected feature. */
+export function recommendTier(selected: ReadonlySet<string>): PricingTierId {
+  let rank = 0;
+  for (const feature of ESTIMATOR_FEATURES) {
+    if (selected.has(feature.id)) rank = Math.max(rank, TIER_RANK[feature.tier]);
+  }
+  return PRICING_TIERS[rank]!.id;
+}
+
+export interface PriceRange {
+  from: number;
+  /** null = open-ended ("and up"). */
+  to: number | null;
+  label: string;
+}
+
+const usd = (n: number): string => `$${n.toLocaleString('en-US')}`;
+
+/** Indicative range: from the tier's starting price up to just below the next tier. */
+export function priceRange(tierId: PricingTierId): PriceRange {
+  const index = TIER_RANK[tierId];
+  const from = PRICING_TIERS[index]!.price;
+  const next = PRICING_TIERS[index + 1];
+  if (!next) return { from, to: null, label: `${usd(from)}+` };
+  const to = next.price - 1;
+  return { from, to, label: `${usd(from)} – ${usd(to)}` };
+}

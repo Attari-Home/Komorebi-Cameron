@@ -54,6 +54,12 @@ export class PetalPool implements PetalBuffers {
   private height = 0;
   /** Upper bound set by the quality governor. */
   private ceiling: number;
+  /** Seasonal mood multipliers (1 = the signature look). See `setMood`. */
+  private moodDensity = 1;
+  private moodFall = 1;
+  private moodSway = 1;
+  private moodDrift = 1;
+  private dpr = 1;
 
   constructor(config: PetalConfig, seed: number) {
     this.config = config;
@@ -87,7 +93,7 @@ export class PetalPool implements PetalBuffers {
   /** Petal count appropriate for a viewport, clamped to [minCount, ceiling]. */
   computeTargetCount(width: number, height: number, dpr: number): number {
     const cfg = this.config;
-    let n = (width * height) / cfg.areaPerPetal;
+    let n = ((width * height) / cfg.areaPerPetal) * this.moodDensity;
     if (width < 640) n *= 0.75; // small screens: fewer, less busy
     if (dpr > 1.75) n *= 0.9; // dense screens: fill-rate is costlier
     const upper = Math.max(cfg.minCount, this.ceiling);
@@ -100,6 +106,7 @@ export class PetalPool implements PetalBuffers {
     const prevH = this.height;
     this.width = width;
     this.height = height;
+    this.dpr = dpr;
 
     const target = this.computeTargetCount(width, height, dpr);
 
@@ -124,6 +131,28 @@ export class PetalPool implements PetalBuffers {
     const target = clamp(Math.round(next), 0, this.capacity);
     for (let i = this.count; i < target; i++) this.spawn(i, SpawnMode.Anywhere);
     this.count = target;
+  }
+
+  /**
+   * Seasonal mood: scales petal density, fall speed, sway and wind relative to
+   * the signature look (all 1). Existing petals are rescaled in place so the
+   * change is felt immediately, with no respawn pop. Counts stay within
+   * [minCount, ceiling] like everything else.
+   */
+  setMood(mood: { density: number; fall: number; sway: number; drift: number }): void {
+    const fallRatio = mood.fall / this.moodFall;
+    const swayRatio = mood.sway / this.moodSway;
+    for (let i = 0; i < this.capacity; i++) {
+      this.fall[i] = this.fall[i]! * fallRatio;
+      this.swayAmp[i] = this.swayAmp[i]! * swayRatio;
+    }
+    this.moodDensity = mood.density;
+    this.moodFall = mood.fall;
+    this.moodSway = mood.sway;
+    this.moodDrift = mood.drift;
+    if (this.width > 0 && this.height > 0) {
+      this.setActiveCount(this.computeTargetCount(this.width, this.height, this.dpr));
+    }
   }
 
   /** Quality governor hook: lower (or restore) the maximum active count. */
@@ -154,7 +183,7 @@ export class PetalPool implements PetalBuffers {
     const spinBoost = 1 + Math.abs(influence) * vr.spin;
     const follow = 1 - Math.exp(-cfg.inertia * dt);
     // Slowly breathing ambient wind so the field never feels mechanical.
-    const wind = cfg.driftSpeed * (0.6 + 0.4 * Math.sin(time * 0.13));
+    const wind = cfg.driftSpeed * this.moodDrift * (0.6 + 0.4 * Math.sin(time * 0.13));
 
     const { x, y, vx, vy, rot, vrot, flip, vflip, z, phase, swayFreq, swayAmp, fall } = this;
 
@@ -251,8 +280,8 @@ export class PetalPool implements PetalBuffers {
 
     this.phase[i] = rand() * Math.PI * 2;
     this.swayFreq[i] = randRange(rand, cfg.swayFrequency[0], cfg.swayFrequency[1]);
-    this.swayAmp[i] = randRange(rand, cfg.swayAmplitude[0], cfg.swayAmplitude[1]);
-    this.fall[i] = randRange(rand, cfg.fallSpeed[0], cfg.fallSpeed[1]);
+    this.swayAmp[i] = randRange(rand, cfg.swayAmplitude[0], cfg.swayAmplitude[1]) * this.moodSway;
+    this.fall[i] = randRange(rand, cfg.fallSpeed[0], cfg.fallSpeed[1]) * this.moodFall;
 
     this.rot[i] = rand() * Math.PI * 2;
     this.vrot[i] = randRange(rand, cfg.spinSpeed[0], cfg.spinSpeed[1]) * (rand() < 0.5 ? -1 : 1);

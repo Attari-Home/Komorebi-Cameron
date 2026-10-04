@@ -8,7 +8,14 @@
   Cache-Control: public, max-age=86400
 /favicon.svg
   Cache-Control: public, max-age=86400
+/site.webmanifest
+  Cache-Control: public, max-age=86400
+/llms.txt
+  Cache-Control: public, max-age=86400
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+  X-Frame-Options: SAMEORIGIN
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload

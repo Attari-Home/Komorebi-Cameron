@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type SyntheticEvent } from 'react';
 import { PROJECT_TYPES } from '../../data/content';
-import { PACKAGE_OPTIONS } from '../../data/pricing';
+import { PACKAGE_OPTIONS, packageLabel } from '../../data/pricing';
 import { SITE } from '../../data/site';
 import {
   getSelectedPackage,
@@ -10,6 +10,7 @@ import {
   type PackageChoice,
 } from '../../lib/packageSelection';
 import InteractiveText from './InteractiveText';
+import GlassSelect from './GlassSelect';
 
 type Status = 'idle' | 'sending' | 'sent' | 'mailto' | 'error';
 type Channel = (typeof SITE.contact.channels)[number]['value'];
@@ -53,6 +54,8 @@ export default function ContactForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [pkg, setPkg] = useState<PackageChoice>(() => getSelectedPackage());
   const [channel, setChannel] = useState<Channel>('email');
+  const [project, setProject] = useState<string>(PROJECT_TYPES[0]);
+  const [message, setMessage] = useState('');
   const [aura, setAura] = useState(false);
   const [sentChannel, setSentChannel] = useState<Channel>('email');
 
@@ -63,8 +66,12 @@ export default function ContactForm() {
     let startTimer = 0;
     let endTimer = 0;
 
-    const off = onPackageChange(({ id, highlight }) => {
+    const off = onPackageChange(({ id, highlight, note }) => {
       setPkg(id);
+      if (note) {
+        // The estimator's summary: add it once, never clobber what they typed.
+        setMessage((prev) => (prev.includes(note) ? prev : prev.trim() ? `${prev.trimEnd()}\n\n${note}` : note));
+      }
       if (!highlight) return;
 
       // A fresh choice from the pricing cards: show the form again and glow
@@ -98,7 +105,7 @@ export default function ContactForm() {
           ? 'Please share your Discord username so we can reach you there.'
           : 'Please share the number we should text.';
     }
-    if (String(data.get('message') ?? '').trim().length < 10) {
+    if (message.trim().length < 10) {
       next.message = 'A few words about your project would help (10+ characters).';
     }
     return next;
@@ -116,15 +123,15 @@ export default function ContactForm() {
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
-    const packageLabel = PACKAGE_OPTIONS.find((o) => o.value === pkg)?.label ?? '';
+    const packageText = packageLabel(pkg);
     const payload = {
       name: String(data.get('name')).trim(),
       email: String(data.get('email')).trim(),
       contactPreference: channelLabel(channel),
       contactHandle: channel === 'email' ? '' : String(data.get('handle') ?? '').trim(),
-      project: String(data.get('project') ?? ''),
-      package: packageLabel,
-      message: String(data.get('message')).trim(),
+      project,
+      package: packageText,
+      message: message.trim(),
     };
 
     setSentChannel(channel);
@@ -140,6 +147,7 @@ export default function ContactForm() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         form.reset();
         setChannel('email');
+        setMessage('');
         setStatus('sent');
       } catch {
         setStatus('error');
@@ -148,14 +156,14 @@ export default function ContactForm() {
     }
 
     const subject = encodeURIComponent(
-      `New project enquiry: ${payload.project || 'General'}${pkg === 'undecided' ? '' : ` / ${packageLabel}`}`,
+      `New project enquiry: ${payload.project || 'General'}${pkg === 'undecided' ? '' : ` / ${packageText}`}`,
     );
     const preference =
       channel === 'email'
         ? 'Email'
         : `${payload.contactPreference} (${payload.contactHandle})`;
     const body = encodeURIComponent(
-      `Hi Komorebi Cameron,\n\n${payload.message}\n\nPackage: ${packageLabel}\nPreferred channel: ${preference}\n\n— ${payload.name}\n${payload.email}`,
+      `Hi Komorebi Cameron,\n\n${payload.message}\n\nPackage: ${packageText}\nPreferred channel: ${preference}\n\n— ${payload.name}\n${payload.email}`,
     );
     window.location.href = `mailto:${SITE.contact.email}?subject=${subject}&body=${body}`;
     setStatus('mailto');
@@ -249,85 +257,72 @@ export default function ContactForm() {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <div>
+          <div className={handleField ? '' : 'sm:col-span-2'}>
             <label htmlFor={`${uid}-channel`} className="mb-2 block text-sm font-medium text-fg-muted">
               How should we reach you?
             </label>
-            <select
+            <GlassSelect
               id={`${uid}-channel`}
               name="channel"
-              className="field"
               value={channel}
-              onChange={(e) => {
-                setChannel(e.target.value as Channel);
+              options={SITE.contact.channels}
+              onChange={(value) => {
+                setChannel(value as Channel);
                 setErrors((prev) => ({ ...prev, handle: undefined }));
               }}
-            >
-              {SITE.contact.channels.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
-          <div>
-            <label htmlFor={`${uid}-package`} className="mb-2 block text-sm font-medium text-fg-muted">
-              Package / budget
-            </label>
-            <select
-              id={`${uid}-package`}
-              name="package"
-              className="field"
-              value={pkg}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (isPackageChoice(value)) setSelectedPackage(value);
-              }}
-            >
-              {PACKAGE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {handleField && (
+            <div>
+              <label htmlFor={`${uid}-handle`} className="mb-2 block text-sm font-medium text-fg-muted">
+                {handleField.label}
+              </label>
+              <input
+                id={`${uid}-handle`}
+                name="handle"
+                type={handleField.type}
+                autoComplete={handleField.autoComplete}
+                placeholder={handleField.placeholder}
+                className="field"
+                aria-invalid={errors.handle ? 'true' : undefined}
+                aria-describedby={describedBy('handle')}
+              />
+              {errors.handle && (
+                <p id={`${uid}-handle-error`} className="mt-2 text-sm text-[#ff6a7a]">
+                  {errors.handle}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
-        {handleField && (
-          <div>
-            <label htmlFor={`${uid}-handle`} className="mb-2 block text-sm font-medium text-fg-muted">
-              {handleField.label}
-            </label>
-            <input
-              id={`${uid}-handle`}
-              name="handle"
-              type={handleField.type}
-              autoComplete={handleField.autoComplete}
-              placeholder={handleField.placeholder}
-              className="field"
-              aria-invalid={errors.handle ? 'true' : undefined}
-              aria-describedby={describedBy('handle')}
-            />
-            {errors.handle && (
-              <p id={`${uid}-handle-error`} className="mt-2 text-sm text-[#ff6a7a]">
-                {errors.handle}
-              </p>
-            )}
-          </div>
-        )}
+        <div>
+          <label htmlFor={`${uid}-package`} className="mb-2 block text-sm font-medium text-fg-muted">
+            Package / budget
+          </label>
+          <GlassSelect
+            id={`${uid}-package`}
+            name="package"
+            value={pkg}
+            options={PACKAGE_OPTIONS}
+            onChange={(value) => {
+              if (isPackageChoice(value)) setSelectedPackage(value);
+            }}
+          />
+        </div>
 
         <div>
           <label htmlFor={`${uid}-project`} className="mb-2 block text-sm font-medium text-fg-muted">
             What are you looking for?
           </label>
-          <select id={`${uid}-project`} name="project" className="field" defaultValue={PROJECT_TYPES[0]}>
-            {PROJECT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+          <GlassSelect
+            id={`${uid}-project`}
+            name="project"
+            value={project}
+            options={PROJECT_TYPES.map((type) => ({ value: type, label: type }))}
+            onChange={setProject}
+          />
         </div>
 
         <div>
@@ -337,6 +332,8 @@ export default function ContactForm() {
           <textarea
             id={`${uid}-message`}
             name="message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
             rows={5}
             placeholder="Goals, timeline, anything that inspires you…"
             className="field resize-y"

@@ -21,6 +21,8 @@ import CanvasStage from '../components/react/CanvasStage';
 import GuidePetal from '../components/react/GuidePetal';
 import LiquidThemeTransition from '../components/react/LiquidThemeTransition';
 import { SITE } from '../data/site';
+import { PRICING_TIERS } from '../data/pricing';
+import type { FaqItem } from '../data/faq';
 
 interface Props {
   title?: string;
@@ -30,6 +32,8 @@ interface Props {
   ogImage?: string;
   ogImageAlt?: string;
   noindex?: boolean;
+  /** Questions to emit as FAQPage structured data. */
+  faq?: readonly FaqItem[];
 }
 
 const {
@@ -42,44 +46,117 @@ const {
 } = Astro.props;
 
 const siteOrigin = (Astro.site ?? new URL(SITE.url)).toString();
-const canonicalUrl = new URL(canonicalPath, siteOrigin).toString();
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+// The canonical URL must include the deployment base path (e.g. /Komorebi-Cameron
+// on GitHub Pages); resolving a bare "/" against the origin would point at the wrong page.
+const canonicalUrl = new URL(BASE + (canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`), siteOrigin).toString();
 const ogImageUrl = new URL(ogImage.startsWith('/') ? BASE + ogImage : ogImage, siteOrigin).toString();
 
-// ---- Schema.org: ProfessionalService ------------------------------------
+// ---- Schema.org structured data (one linked @graph) -----------------------
+// URLs derive from the real deployment origin + base path, so they stay correct
+// on GitHub Pages and automatically follow a custom domain once one is set.
+const siteUrl = new URL(`${BASE}/`, siteOrigin).toString(); // always ends with "/"
+const orgId = `${siteUrl}#organization`;
+const websiteId = `${siteUrl}#website`;
+const faqItems = Astro.props.faq ?? [];
+
+const offerCatalog = {
+  '@type': 'OfferCatalog',
+  name: `${SITE.name} Services and Packages`,
+  itemListElement: [
+    ...SITE.services.map((s) => ({
+      '@type': 'Offer',
+      itemOffered: { '@type': 'Service', name: s.name, description: s.description },
+    })),
+    ...PRICING_TIERS.map((tier) => ({
+      '@type': 'Offer',
+      name: tier.name,
+      description: tier.summary,
+      priceCurrency: 'USD',
+      priceSpecification: {
+        '@type': 'PriceSpecification',
+        minPrice: tier.price,
+        priceCurrency: 'USD',
+      },
+      itemOffered: { '@type': 'Service', name: tier.name, serviceType: 'Web development' },
+    })),
+  ],
+};
+
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'ProfessionalService',
-  '@id': `${SITE.url}/#organization`,
-  name: SITE.name,
-  legalName: SITE.legalName,
-  url: SITE.url,
-  description: SITE.description,
-  slogan: 'Crafting Unforgettable Digital Experiences',
-  image: ogImageUrl,
-  logo: new URL(BASE + '/favicon.svg', siteOrigin).toString(),
-  areaServed: 'Worldwide',
-  knowsAbout: [
-    'Web development',
-    'Creative engineering',
-    'HTML5 canvas graphics',
-    'Search engine optimization',
-    'Web performance',
-  ],
-  serviceType: SITE.services.map((s) => s.name),
-  hasOfferCatalog: {
-    '@type': 'OfferCatalog',
-    name: `${SITE.name} Services`,
-    itemListElement: SITE.services.map((s) => ({
-      '@type': 'Offer',
-      itemOffered: {
-        '@type': 'Service',
-        name: s.name,
-        description: s.description,
+  '@graph': [
+    {
+      '@type': 'ProfessionalService',
+      '@id': orgId,
+      name: SITE.name,
+      legalName: SITE.legalName,
+      url: siteUrl,
+      description: SITE.description,
+      slogan: 'Crafting Unforgettable Digital Experiences',
+      image: ogImageUrl,
+      logo: {
+        '@type': 'ImageObject',
+        url: new URL(BASE + '/favicon.svg', siteOrigin).toString(),
       },
-    })),
-  },
-  ...(SITE.sameAs.length > 0 ? { sameAs: SITE.sameAs } : {}),
+      email: SITE.contact.email,
+      priceRange: `$${PRICING_TIERS[0].price.toLocaleString('en-US')}+`,
+      areaServed: 'Worldwide',
+      availableLanguage: 'English',
+      knowsAbout: [
+        'Web development',
+        'Creative engineering',
+        'HTML5 canvas graphics',
+        'WebGL',
+        'Astro',
+        'Search engine optimization',
+        'Core Web Vitals',
+        'Web performance',
+      ],
+      serviceType: SITE.services.map((s) => s.name),
+      hasOfferCatalog: offerCatalog,
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'sales',
+        email: SITE.contact.email,
+        availableLanguage: 'English',
+      },
+      ...(SITE.sameAs.length > 0 ? { sameAs: SITE.sameAs } : {}),
+    },
+    {
+      '@type': 'WebSite',
+      '@id': websiteId,
+      url: siteUrl,
+      name: SITE.name,
+      description: SITE.description,
+      inLanguage: 'en',
+      publisher: { '@id': orgId },
+    },
+    {
+      '@type': 'WebPage',
+      '@id': `${canonicalUrl}#webpage`,
+      url: canonicalUrl,
+      name: title,
+      description,
+      inLanguage: 'en',
+      isPartOf: { '@id': websiteId },
+      about: { '@id': orgId },
+      primaryImageOfPage: { '@type': 'ImageObject', url: ogImageUrl },
+    },
+    ...(faqItems.length > 0
+      ? [
+          {
+            '@type': 'FAQPage',
+            '@id': `${canonicalUrl}#faq`,
+            mainEntity: faqItems.map((item) => ({
+              '@type': 'Question',
+              name: item.question,
+              acceptedAnswer: { '@type': 'Answer', text: item.answer },
+            })),
+          },
+        ]
+      : []),
+  ],
 };
 ---
 
@@ -138,6 +215,9 @@ const jsonLd = {
     <meta name="generator" content={Astro.generator} />
     <meta name="theme-color" content={SITE.themeColor} />
     <meta name="color-scheme" content="dark light" />
+    <meta name="application-name" content={SITE.name} />
+    <meta name="apple-mobile-web-app-title" content={SITE.name} />
+    <meta name="format-detection" content="telephone=no" />
     <meta
       name="robots"
       content={noindex
@@ -145,10 +225,15 @@ const jsonLd = {
         : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'}
     />
     <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="en" href={canonicalUrl} />
+    <link rel="alternate" hreflang="x-default" href={canonicalUrl} />
     <link rel="sitemap" href={`${BASE}/sitemap-index.xml`} />
 
     <!-- Icons -->
     <link rel="icon" type="image/svg+xml" href={`${BASE}/favicon.svg`} />
+    <link rel="icon" type="image/png" sizes="32x32" href={`${BASE}/favicon-32.png`} />
+    <link rel="apple-touch-icon" sizes="180x180" href={`${BASE}/apple-touch-icon.png`} />
+    <link rel="manifest" href={`${BASE}/site.webmanifest`} />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -158,6 +243,7 @@ const jsonLd = {
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={ogImageAlt} />

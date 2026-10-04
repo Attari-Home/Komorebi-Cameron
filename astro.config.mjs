@@ -34,7 +34,11 @@ export default defineConfig({
       // control layer order and CSS variable declarations precisely.
       applyBaseStyles: false,
     }),
-    sitemap(),
+    sitemap({
+      changefreq: 'monthly',
+      priority: 0.9,
+      lastmod: new Date(),
+    }),
   ],
 
   vite: {

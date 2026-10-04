@@ -6,6 +6,14 @@ import {
   onPaletteChange,
 } from '../../lib/petalPalette';
 import { transitionPalette } from '../../lib/liquidTransition';
+import { SEASONS, type SeasonSetting } from '../../data/seasons';
+import { getSeasonSetting, onSeasonChange, resolveSeason, setSeasonSetting } from '../../lib/season';
+
+const SEASON_CHOICES: ReadonlyArray<{ value: SeasonSetting; label: string }> = [
+  { value: 'off', label: 'Off' },
+  { value: 'auto', label: 'Auto' },
+  ...SEASONS.map((s) => ({ value: s.id as SeasonSetting, label: s.label })),
+];
 
 /**
  * Petal colour selector for the header.
@@ -17,6 +25,7 @@ import { transitionPalette } from '../../lib/liquidTransition';
 export default function PaletteSelector() {
   const [id, setId] = useState<PetalPaletteId>(() => getCurrentPaletteId());
   const [open, setOpen] = useState(false);
+  const [season, setSeason] = useState<SeasonSetting>(() => getSeasonSetting());
 
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -25,7 +34,13 @@ export default function PaletteSelector() {
 
   useEffect(() => {
     setId(getCurrentPaletteId());
-    return onPaletteChange(setId);
+    const offPalette = onPaletteChange(setId);
+    setSeason(getSeasonSetting());
+    const offSeason = onSeasonChange(setSeason);
+    return () => {
+      offPalette();
+      offSeason();
+    };
   }, []);
 
   // Close on outside click / Escape.
@@ -163,6 +178,38 @@ export default function PaletteSelector() {
               </button>
             );
           })}
+
+          <div className="mx-2 mt-2 border-t border-line/10 pt-3">
+            <p className="px-1 text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-fg-muted">
+              Seasonal mode
+            </p>
+            <div role="group" aria-label="Seasonal mode" className="mt-2 flex flex-wrap gap-1.5 px-1 pb-2">
+              {SEASON_CHOICES.map((choice) => {
+                const active = season === choice.value;
+                return (
+                  <button
+                    key={choice.value}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setSeasonSetting(choice.value)}
+                    className={[
+                      'min-h-9 rounded-full border px-3.5 text-xs font-semibold tracking-wide transition-colors duration-300',
+                      active
+                        ? 'border-sakura-a/60 bg-sakura-a/15 text-sakura-a'
+                        : 'border-line/15 text-fg-muted hover:border-sakura-a/40 hover:text-fg',
+                    ].join(' ')}
+                  >
+                    {choice.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="px-1 pb-2 text-xs leading-relaxed text-fg-muted" aria-live="polite">
+              {season === 'off'
+                ? 'Petals follow the signature spring look.'
+                : `${resolveSeason(season)?.label}: ${resolveSeason(season)?.description.toLowerCase()}.`}
+            </p>
+          </div>
         </div>
       )}
     </div>

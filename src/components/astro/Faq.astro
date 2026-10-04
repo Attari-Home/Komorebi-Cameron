@@ -1,0 +1,50 @@
+---
+/**
+ * Faq.astro: native <details> accordion (works with zero JavaScript, fully
+ * keyboard accessible). The same data powers the FAQPage structured data.
+ */
+import Container from './Container.astro';
+import { FAQ } from '../../data/faq';
+---
+
+<section id="faq" aria-labelledby="faq-heading" class="relative scroll-mt-24 py-28 lg:py-40">
+  <Container>
+    <div class="grid gap-14 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-x-20">
+      <div class="max-w-xl" data-reveal>
+        <p class="mb-8 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted">
+          <span aria-hidden="true" class="h-px w-10 bg-sakura-gradient"></span>
+          Questions
+        </p>
+        <h2 id="faq-heading" class="i-text text-balance font-sans text-display-lg font-semibold">
+          Everything,
+          <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] pr-[0.08em] text-[1.12em] leading-[0.9]">clearly</em>
+          answered.
+        </h2>
+        <p class="i-text i-text-muted mt-8 text-pretty text-lg leading-relaxed">
+          Still wondering about something? Send it through the form below. We reply in writing, within 7 days.
+        </p>
+      </div>
+
+      <div class="space-y-3" data-reveal style="--reveal-delay: 120ms">
+        {
+          FAQ.map((item) => (
+            <details class="faq-item glass group rounded-3xl" name="faq">
+              <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-6 px-6 py-5 sm:px-8 [&::-webkit-details-marker]:hidden">
+                <h3 class="i-text text-balance font-sans text-base font-semibold leading-snug sm:text-lg">{item.question}</h3>
+                <span
+                  aria-hidden="true"
+                  class="faq-icon grid h-9 w-9 shrink-0 place-items-center rounded-full border border-sakura-a/30 bg-sakura-a/10 text-sakura-a transition-transform duration-500 ease-out-expo"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </span>
+              </summary>
+              <p class="i-text i-text-muted px-6 pb-6 pr-16 leading-relaxed sm:px-8 sm:pb-7 sm:pr-20">{item.answer}</p>
+            </details>
+          ))
+        }
+      </div>
+    </div>
+  </Container>
+</section>

@@ -1,0 +1,135 @@
+---
+/**
+ * Pricing.astro: three theme-adaptive glass tiers.
+ *
+ * Static HTML. A tiny script wires each "Select Package" link to the contact
+ * form through `src/lib/packageSelection.ts`. The links are real `#contact`
+ * anchors, so Lenis smooth-scrolls to the form (and plain browsers jump
+ * there) even before any JavaScript has run.
+ */
+import Container from './Container.astro';
+import { PRICING_TIERS, PRICING_NOTE } from '../../data/pricing';
+---
+
+<section id="pricing" aria-labelledby="pricing-heading" class="relative scroll-mt-24 py-28 lg:py-44">
+  <Container>
+    <div class="max-w-3xl" data-reveal>
+      <p class="mb-8 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-fg-muted">
+        <span aria-hidden="true" class="h-px w-10 bg-sakura-gradient"></span>
+        Investment
+      </p>
+      <h2 id="pricing-heading" class="i-text text-balance font-sans text-display-lg font-semibold">
+        Three ways to begin, one
+        <em class="accent-serif text-sakura-gradient inline-block pb-[0.1em] pr-[0.08em] text-[1.12em] leading-[0.9]">uncompromising</em>
+        standard.
+      </h2>
+      <p class="i-text i-text-muted mt-8 max-w-2xl text-pretty text-lg leading-relaxed sm:text-xl">
+        Choose the package that fits your ambition. Everything is handled in
+        writing, at your pace, with no calls and no surprises.
+      </p>
+    </div>
+
+    <ul class="mt-16 grid gap-6 lg:mt-24 lg:grid-cols-3 lg:items-stretch">
+      {
+        PRICING_TIERS.map((tier, i) => (
+          <li data-reveal style={`--reveal-delay: ${i * 130}ms`} class="flex">
+            <article
+              class:list={[
+                'pricing-card group flex w-full flex-col rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl dark:border-white/5 sm:p-10',
+                '[[data-theme=light]_&]:border-line/15 [[data-theme=light]_&]:bg-white/60',
+              ]}
+              data-package-card={tier.id}
+              data-featured={tier.featured ? 'true' : 'false'}
+              data-selected="false"
+              aria-labelledby={`tier-${tier.id}-name`}
+            >
+              <div class="flex items-start justify-between gap-4">
+                <p class="text-xs font-medium uppercase tracking-[0.24em] text-sakura-a">{tier.kicker}</p>
+                <span class="text-sm font-medium tracking-[0.2em] text-fg-muted">{tier.index}</span>
+              </div>
+
+              <h3
+                id={`tier-${tier.id}-name`}
+                class="i-text mt-6 text-balance font-sans text-2xl font-semibold leading-tight sm:text-[1.7rem]"
+              >
+                {tier.name}
+              </h3>
+
+              <p class="mt-8">
+                <span class="block text-xs font-medium uppercase tracking-[0.2em] text-fg-muted">Starting at</span>
+                <span class="text-sakura-gradient mt-1 inline-block pb-1 font-sans text-5xl font-semibold tabular-nums tracking-tight sm:text-6xl">
+                  {tier.priceLabel}
+                </span>
+              </p>
+
+              <p class="i-text i-text-muted mt-6 leading-relaxed">{tier.summary}</p>
+
+              <ul class="mt-8 flex-1 space-y-3 border-t border-line/10 pt-8">
+                {
+                  tier.features.map((feature) => (
+                    <li class="i-text i-text-muted flex gap-3 text-sm leading-relaxed">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="mt-[0.2rem] shrink-0 text-sakura-a"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path d="M5 12.5l4.5 4.5L19 7.5" />
+                      </svg>
+                      {feature}
+                    </li>
+                  ))
+                }
+              </ul>
+
+              <a
+                href="#contact"
+                data-package-select={tier.id}
+                aria-describedby={`tier-${tier.id}-name`}
+                class:list={['btn-glass mt-10 w-full flex-col !gap-0.5 !py-3', tier.featured && 'btn-glass-primary']}
+              >
+                <span>Select Package</span>
+                <span class="text-[0.7rem] font-medium uppercase tracking-[0.2em] text-fg-muted">Start via Email</span>
+              </a>
+
+              <span class="pricing-badge" data-selected-badge>Selected</span>
+              {tier.featured && <span class="pricing-badge pricing-badge--signature">Signature</span>}
+            </article>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="mt-8 text-center text-sm text-fg-muted" data-reveal>{PRICING_NOTE}</p>
+  </Container>
+</section>
+
+<script>
+  import { isPackageChoice, onPackageChange, setSelectedPackage } from '../../lib/packageSelection';
+
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-package-card]'));
+
+  // Reflect the current choice on the cards (also when it is changed from the form).
+  const sync = (id: string): void => {
+    for (const card of cards) {
+      card.dataset.selected = card.dataset.packageCard === id ? 'true' : 'false';
+    }
+  };
+  onPackageChange(({ id }) => sync(id));
+
+  // The links are real #contact anchors, so scrolling is handled by Lenis (or
+  // the browser). We only need to record the choice and ask the form to glow.
+  for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-package-select]')) {
+    link.addEventListener('click', () => {
+      const id = link.dataset.packageSelect;
+      if (isPackageChoice(id)) setSelectedPackage(id, { highlight: true });
+    });
+  }
+</script>

@@ -19,6 +19,7 @@ import cormorantItalicFont from '@fontsource/cormorant-garamond/files/cormorant-
 import SmoothScrollProvider from '../components/react/SmoothScrollProvider';
 import CanvasStage from '../components/react/CanvasStage';
 import GuidePetal from '../components/react/GuidePetal';
+import LiquidThemeTransition from '../components/react/LiquidThemeTransition';
 import { SITE } from '../data/site';
 
 interface Props {
@@ -211,6 +212,7 @@ const jsonLd = {
 
     <SmoothScrollProvider client:only="react" />
     <GuidePetal client:only="react" />
+    <LiquidThemeTransition client:only="react" />
 
     <slot />
 

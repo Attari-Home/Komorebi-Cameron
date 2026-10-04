@@ -1,0 +1,39 @@
+---
+/**
+ * TrustBar.astro: the studio's four promises in one glass strip.
+ * Copy lives in `SITE.trustPoints` (src/data/site.ts).
+ */
+import Container from './Container.astro';
+import { SITE } from '../../data/site';
+---
+
+<section aria-label="Studio guarantees" class="relative py-10 lg:py-14">
+  <Container>
+    <ul class="trust-bar glass-strong grid overflow-hidden rounded-[2rem] sm:grid-cols-2 lg:grid-cols-4" data-reveal>
+      {
+        SITE.trustPoints.map((point, i) => (
+          <li
+            class:list={[
+              'trust-item group relative flex items-start gap-4 p-6 sm:p-7',
+              i > 0 && 'border-t border-line/10 sm:border-t-0',
+              i % 2 === 1 && 'sm:border-l sm:border-line/10',
+              i >= 2 && 'sm:border-t sm:border-line/10 lg:border-t-0',
+              i > 0 && 'lg:border-l lg:border-line/10',
+            ]}
+          >
+            <span
+              aria-hidden="true"
+              class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-sakura-a/30 bg-sakura-a/10 text-xl leading-none shadow-glow-sm transition-transform duration-500 ease-out-expo group-hover:-translate-y-0.5 group-hover:scale-110"
+            >
+              {point.icon}
+            </span>
+            <div class="min-w-0">
+              <p class="i-text text-balance text-sm font-semibold leading-snug">{point.title}</p>
+              <p class="i-text i-text-muted mt-1 text-sm leading-relaxed">{point.detail}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </Container>
+</section>

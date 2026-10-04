@@ -4,14 +4,14 @@ import {
   getCurrentPaletteId,
   getPaletteDefinition,
   onPaletteChange,
-  setPetalPalette,
 } from '../../lib/petalPalette';
+import { transitionPalette } from '../../lib/liquidTransition';
 
 /**
  * Petal colour selector for the header.
  *
  * A glass icon button showing the current swatch opens a small radio-group
- * popover. Choosing a palette calls `setPetalPalette`, which the canvas
+ * popover. Choosing a palette runs the liquid wave transition, which applies the palette; the canvas
  * engine and guide petal listen for and restyle instantly.
  */
 export default function PaletteSelector() {
@@ -62,9 +62,10 @@ export default function PaletteSelector() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // The liquid wave applies the palette beneath itself; the selected state
+  // follows through `onPaletteChange` at that moment.
   const choose = useCallback((next: PetalPaletteId) => {
-    setPetalPalette(next);
-    setId(next);
+    transitionPalette(next);
   }, []);
 
   const onOptionKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {

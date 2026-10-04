@@ -26,14 +26,50 @@ export const SITE = {
      * email client with the message pre-filled instead.
      */
     formEndpoint: '',
-    responseTime: 'within one business day',
+    /** Public response-time promise. The studio is 100% asynchronous. */
+    responseWindow: 'Within 7 days',
+    /** Communication preferences offered on the contact form. Never calls. */
+    channels: [
+      { value: 'email', label: 'Email' },
+      { value: 'discord', label: 'Discord' },
+      { value: 'text', label: 'Text' },
+    ],
   },
+
+  /** Studio promises shown in the TrustBar. */
+  trustPoints: [
+    {
+      id: 'async',
+      icon: '📩',
+      title: '100% Async & Text-First',
+      detail: 'Zero calls or phone meetings.',
+    },
+    {
+      id: 'review',
+      icon: '⏳',
+      title: '7-Day Technical Review',
+      detail: 'An in-depth technical review window for every inquiry.',
+    },
+    {
+      id: 'vitals',
+      icon: '⚡',
+      title: '100/100 Core Web Vitals',
+      detail: 'A performance guarantee, not a target.',
+    },
+    {
+      id: 'ownership',
+      icon: '🔒',
+      title: '100% Codebase & IP Ownership',
+      detail: 'Complete handover. Everything we build is yours.',
+    },
+  ],
 
   nav: [
     { label: 'Manifesto', href: '#manifesto' },
     { label: 'Services', href: '#services' },
     { label: 'Process', href: '#process' },
     { label: 'Impact', href: '#impact' },
+    { label: 'Pricing', href: '#pricing' },
     { label: 'Contact', href: '#contact' },
   ],
 

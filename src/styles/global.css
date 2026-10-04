@@ -654,3 +654,159 @@
   from { transform: translate3d(-70px, 6px, 0); }
   to { transform: translate3d(90px, -8px, 0); }
 }
+
+
+/* --------------------------------------------------------------------------
+   Pricing cards (see Pricing.astro) and package-selection feedback
+   Glass is set by utilities in the markup; this block adds the micro-
+   interactions. Every accent comes from the active palette tokens.
+   -------------------------------------------------------------------------- */
+@layer components {
+  .pricing-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    box-shadow: var(--glass-shadow);
+    transition:
+      transform 0.6s theme('transitionTimingFunction.out-expo'),
+      box-shadow 0.5s ease,
+      border-color 0.4s ease,
+      background-color 0.4s ease;
+  }
+
+  /* Glowing border aura: a masked ring that lights up on hover / selection. */
+  .pricing-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--sweep-angle),
+      rgb(var(--border-accent) / 0.15) 0deg,
+      rgb(var(--border-accent) / 0.95) 80deg,
+      rgb(var(--sakura-b) / 0.95) 150deg,
+      rgb(var(--border-accent) / 0.15) 240deg,
+      rgb(var(--border-accent) / 0.15) 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    opacity: 0;
+    transition: opacity 0.45s ease;
+    pointer-events: none;
+  }
+
+  /* Inner light streak: parked off to the left until hover. */
+  .pricing-card::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    background: linear-gradient(
+      105deg,
+      transparent 36%,
+      rgb(255 255 255 / 0.05) 45%,
+      rgb(var(--sakura-b) / 0.2) 50%,
+      rgb(255 255 255 / 0.05) 55%,
+      transparent 64%
+    );
+    transform: translate3d(-130%, 0, 0);
+    transition: transform 0s;
+    pointer-events: none;
+  }
+
+  .pricing-card:hover,
+  .pricing-card:focus-within {
+    transform: translate3d(0, -4px, 0);
+    background-color: rgb(var(--surface) / var(--surface-alpha-hover));
+    box-shadow:
+      var(--glass-shadow),
+      0 24px 60px -28px rgb(var(--sakura-a) / 0.5),
+      0 0 44px -10px rgb(var(--border-accent) / 0.45);
+  }
+  .pricing-card:hover::before,
+  .pricing-card:focus-within::before {
+    opacity: 1;
+    animation: border-sweep 6s linear infinite;
+  }
+  .pricing-card:hover::after,
+  .pricing-card:focus-within::after {
+    transform: translate3d(130%, 0, 0);
+    transition: transform 1.05s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Featured (signature) tier sits a little brighter at rest. */
+  .pricing-card[data-featured='true'] {
+    background-image: linear-gradient(
+      160deg,
+      rgb(var(--sakura-a) / 0.12) 0%,
+      rgb(var(--sakura-b) / 0.03) 55%,
+      transparent 100%
+    );
+    box-shadow:
+      var(--glass-shadow),
+      0 0 54px -22px rgb(var(--sakura-a) / 0.55);
+  }
+
+  /* Chosen package: the aura stays on. */
+  .pricing-card[data-selected='true'] {
+    border-color: rgb(var(--border-accent) / 0.7);
+    box-shadow:
+      var(--glass-shadow),
+      0 0 60px -14px rgb(var(--border-accent) / 0.6);
+  }
+  .pricing-card[data-selected='true']::before {
+    opacity: 1;
+    animation: border-sweep 6s linear infinite;
+  }
+
+  .pricing-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 1.25rem;
+    display: none;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--sakura-a) / 0.45);
+    background: rgb(var(--sakura-a) / 0.14);
+    color: rgb(var(--sakura-a));
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .pricing-badge--signature {
+    display: inline-block;
+  }
+  .pricing-card[data-selected='true'] [data-selected-badge] {
+    display: inline-block;
+  }
+  .pricing-card[data-selected='true'] .pricing-badge--signature {
+    display: none;
+  }
+}
+
+/* Contact form: brief glowing aura after a package is chosen above. */
+@keyframes package-aura {
+  0% {
+    box-shadow: 0 0 0 0 rgb(var(--border-accent) / 0.6), 0 0 0 0 rgb(var(--border-accent) / 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 26px rgb(var(--border-accent) / 0), 0 0 90px 10px rgb(var(--border-accent) / 0);
+  }
+}
+.package-aura {
+  animation: package-aura 1.6s cubic-bezier(0.16, 1, 0.3, 1) 2;
+}
+.package-aura > .glass-strong {
+  border-color: rgb(var(--border-accent) / 0.75);
+}
+.package-aura-host > .glass-strong {
+  transition: border-color 0.5s ease;
+}
